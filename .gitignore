@@ -22,5 +22,4 @@ coverage.xml
 .pytest_cache
 .hypothesis
 .DS_Store
-admin_config.json
 frontpage_logs.jsonl
