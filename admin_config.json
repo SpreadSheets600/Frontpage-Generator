@@ -1,0 +1,61 @@
+{
+  "subjects": [
+    "Data Structures & Algorithms Lab",
+    "Computer Organization Lab",
+    "IT Workshop",
+    "Analog & Digital Electronics Lab",
+    "Mathematics",
+    "Basic Electrical Engineering",
+    "Physics",
+    "Physics-I Laboratory",
+    "Basic Electrical Engineering Lab",
+    "Workshop",
+    "Chemistry-I",
+    "English",
+    "Chemistry-I Laboratory",
+    "Engineering Graphics & Design",
+    "Language Laboratory",
+    "Programming For Problem Solving Lab",
+    "Programming For Problem Solving",
+    "Mathematics - IA",
+    "Mathematics - IIA",
+    "Physics - I"
+  ],
+  "ece_subjects": [
+    "Data Structure Lab",
+    "Electronic Device Lab",
+    "Digital System Design"
+  ],
+  "aiml_subjects": [],
+  "subject_codes": {
+    "Data Structures & Algorithms Lab": "PCC - CS391",
+    "Computer Organization Lab": "PCC - CS392",
+    "IT Workshop": "PCC - CS393",
+    "Analog & Digital Electronics Lab": "ES - C391",
+    "Electronic Device Lab": "EC - 391",
+    "Digital System Design": "EC - 392",
+    "Data Structure Lab": "ES - CS391",
+    "Mathematics": "BS - M101",
+    "Basic Electrical Engineering": "ES - EE101",
+    "Physics": "BS - PH101",
+    "Physics-I Laboratory": "BS - PH191",
+    "Basic Electrical Engineering Lab": "ES - EE191",
+    "Workshop": "ES - ME192",
+    "Chemistry-I": "BS - CH201",
+    "English": "HM - HU201",
+    "Chemistry-I Laboratory": "BS - CH291",
+    "Engineering Graphics & Design": "ES - ME291",
+    "Language Laboratory": "HM - HU291",
+    "Programming For Problem Solving Lab": "ES - CS291",
+    "Programming For Problem Solving": "ES - CS201",
+    "Mathematics - IA": "BS - M101",
+    "Mathematics - IIA": "BS - M201",
+    "Physics - I": "BS - PH101"
+  },
+  "stream_labels": {
+    "1": "CSE",
+    "2": "IT",
+    "3": "ECE",
+    "4": "CSE AIML"
+  }
+}
