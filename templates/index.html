@@ -1,0 +1,154 @@
+{% extends "layout.html" %} {% block content %}
+<div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center min-h-[80vh]">
+	<!-- Left: Content -->
+	<div class="space-y-8 reveal text-center lg:text-left">
+		<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-electric/30 bg-electric/10 text-electric font-mono text-xs">
+			<span class="relative flex h-2 w-2">
+				<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-electric opacity-75"></span>
+				<span class="relative inline-flex rounded-full h-2 w-2 bg-electric"></span>
+			</span>
+			SYSTEM ONLINE
+		</div>
+
+		<h1 class="text-5xl sm:text-6xl md:text-8xl font-bold tracking-tighter leading-[0.9]">
+			GENERATE <br />
+			<span class="text-transparent bg-clip-text bg-gradient-to-r from-electric to-cyber">FRONTPAGES</span>
+		</h1>
+
+		<p class="text-lg sm:text-xl text-white/60 font-light max-w-md leading-relaxed mx-auto lg:mx-0">Automated frontpage generation for academic submissions. Precision engineered templates. Instant delivery.</p>
+
+		<div class="flex flex-col sm:flex-row gap-4 pt-4 items-center lg:items-start justify-center lg:justify-start">
+			<div class="flex -space-x-4">
+				<div class="w-12 h-12 rounded-full border-2 border-obsidian bg-white/10 backdrop-blur flex items-center justify-center text-xs font-mono">SM</div>
+				<div class="w-12 h-12 rounded-full border-2 border-obsidian bg-white/10 backdrop-blur flex items-center justify-center text-xs font-mono">UP</div>
+				<div class="w-12 h-12 rounded-full border-2 border-obsidian bg-white/10 backdrop-blur flex items-center justify-center text-xs font-mono">GY</div>
+			</div>
+			<div class="flex flex-col justify-center text-center sm:text-left">
+				<span class="text-sm font-bold"><span id="docCounter" data-min="108" data-max="182" data-interval="2300">100</span>+ Generated</span>
+				<span class="text-xs text-white/40 font-mono">Trusted By Students</span>
+			</div>
+		</div>
+	</div>
+
+	<!-- Right: Form -->
+	<div class="relative reveal" style="transition-delay: 200ms">
+		<!-- Decorative elements behind form -->
+		<div class="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-electric to-transparent opacity-20 blur-2xl rounded-full"></div>
+
+		<div class="glass p-6 md:p-10 rounded-3xl relative overflow-hidden">
+			<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-electric via-cyber to-electric opacity-50"></div>
+
+			<h2 class="text-2xl font-bold mb-8 flex items-center gap-3">
+				<svg class="w-6 h-6 text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+				INPUT PARAMETERS
+			</h2>
+
+			<form action="/frontpages" method="POST" class="space-y-6">
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div class="space-y-2">
+						<label class="text-xs font-mono text-white/50 uppercase tracking-wider">Full Name</label>
+						<input type="text" name="name" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all" placeholder="John Doe" />
+					</div>
+					<div class="space-y-2">
+						<label class="text-xs font-mono text-white/50 uppercase tracking-wider">Roll Number</label>
+						<input type="text" name="roll" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all" placeholder="123456" />
+					</div>
+				</div>
+
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div class="space-y-2">
+						<label class="text-xs font-mono text-white/50 uppercase tracking-wider">Registration No</label>
+						<input type="text" name="reg" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all" placeholder="A-1234" />
+					</div>
+					<div class="space-y-2">
+						<label class="text-xs font-mono text-white/50 uppercase tracking-wider">Semester</label>
+						<select name="semester" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all appearance-none">
+							{% for i in range(1, 9) %}
+							<option value="{{ i }}" class="bg-obsidian">{{ i }}th Semester</option>
+							{% endfor %}
+						</select>
+					</div>
+				</div>
+
+				<div class="space-y-2">
+					<label class="text-xs font-mono text-white/50 uppercase tracking-wider">Stream</label>
+					<select name="stream" id="streamSelect" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all appearance-none">
+						<option value="" disabled selected>Select Stream</option>
+						<option value="1" class="bg-obsidian">CSE (Computer Science)</option>
+						<option value="2" class="bg-obsidian">IT (Information Technology)</option>
+						<option value="3" class="bg-obsidian">ECE (Electronics & Comm)</option>
+					</select>
+				</div>
+
+				<div class="space-y-2">
+					<label class="text-xs font-mono text-white/50 uppercase tracking-wider">Subject</label>
+					<select name="subject" id="subjectSelect" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all appearance-none">
+						<option value="" disabled selected>Select Subject</option>
+						<!-- Populated by JS -->
+					</select>
+				</div>
+
+				<button type="submit" class="group w-full bg-white text-black font-bold py-4 rounded-xl mt-4 hover:bg-electric hover:text-white transition-all duration-300 relative overflow-hidden">
+					<span class="relative z-10 flex items-center justify-center gap-2">
+						GENERATE DOCUMENT
+						<svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+					</span>
+				</button>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script>
+	const subjects = {{ subjects|tojson }};
+	const eceSubjects = {{ ece_subjects|tojson }};
+	const aimlSubjects = {{ aiml_subjects|tojson }};
+
+	const streamSelect = document.getElementById('streamSelect');
+	const subjectSelect = document.getElementById('subjectSelect');
+
+	streamSelect.addEventListener('change', (e) => {
+	    const val = e.target.value;
+	    let list = [];
+
+
+	    if (val === '3') {
+	        list = eceSubjects;
+	    } else if (val === '4') {
+	        list = aimlSubjects;
+	    } else {
+	        list = subjects;
+	    }
+
+	    subjectSelect.innerHTML = '<option value="" disabled selected>Select Subject</option>';
+	    list.forEach(sub => {
+	        const opt = document.createElement('option');
+	        opt.value = sub;
+	        opt.textContent = sub;
+	        opt.className = "bg-obsidian";
+	        subjectSelect.appendChild(opt);
+	    });
+	});
+
+	const docCounterEl = document.getElementById('docCounter');
+	if (docCounterEl) {
+        async function updateCounter() {
+            try {
+                const res = await fetch('/api/stats');
+                if (res.ok) {
+                    const data = await res.json();
+                    docCounterEl.textContent = data.generated_count;
+                }
+            } catch (e) {
+                console.error("Failed to fetch stats", e);
+            }
+        }
+        
+        // Initial fetch
+        updateCounter();
+        
+        // Poll every 30 seconds
+        setInterval(updateCounter, 30000);
+	}
+</script>
+{% endblock %}
