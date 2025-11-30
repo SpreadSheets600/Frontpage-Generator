@@ -1,0 +1,453 @@
+{% extends "layout.html" %} {% block content %}
+<div id="authModal" class="fixed inset-0 z-[100] bg-obsidian/90 backdrop-blur-xl flex items-center justify-center px-4">
+	<div class="glass p-6 sm:p-8 rounded-2xl w-full max-w-md text-center space-y-6">
+		<div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+			<svg class="w-8 h-8 text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+		</div>
+		<h2 class="text-2xl font-bold">Admin Access Required</h2>
+		<p class="text-white/50">Enter your secure API key to access the dashboard.</p>
+		<input type="password" id="apiKeyInput" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-center font-mono text-white focus:border-electric focus:outline-none" placeholder="API KEY" />
+		<button onclick="authenticate()" class="w-full bg-electric text-white font-bold py-3 rounded-xl hover:bg-electric/80 transition-colors">AUTHENTICATE</button>
+	</div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="hidden fixed inset-0 z-[50] bg-obsidian/90 backdrop-blur-xl flex items-center justify-center px-4">
+	<div class="glass p-6 sm:p-8 rounded-2xl w-full max-w-md space-y-6 relative">
+		<button onclick="closeEditModal()" class="absolute top-4 right-4 text-white/50 hover:text-white">
+			<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+		</button>
+		<h2 class="text-2xl font-bold flex items-center gap-2">
+			<svg class="w-5 h-5 text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+			EDIT SUBJECT
+		</h2>
+		<input type="hidden" id="editOriginalName" />
+
+		<div class="space-y-3">
+			<div>
+				<label class="text-xs font-mono text-white/40">CATEGORY</label>
+				<div class="flex gap-2 mt-1">
+					<button onclick="setEditCategory('general')" id="btn-edit-general" class="flex-1 py-2 rounded bg-white/5 text-white/50 text-xs font-bold hover:bg-white/10 transition-all">CS</button>
+					<button onclick="setEditCategory('ece')" id="btn-edit-ece" class="flex-1 py-2 rounded bg-white/5 text-white/50 text-xs font-bold hover:bg-white/10 transition-all">ECE</button>
+					<button onclick="setEditCategory('aiml')" id="btn-edit-aiml" class="flex-1 py-2 rounded bg-white/5 text-white/50 text-xs font-bold hover:bg-white/10 transition-all">AIML</button>
+				</div>
+			</div>
+			<div>
+				<label class="text-xs font-mono text-white/40">SUBJECT NAME</label>
+				<input type="text" id="editName" class="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none mt-1" />
+			</div>
+			<div>
+				<label class="text-xs font-mono text-white/40">SUBJECT CODE</label>
+				<input type="text" id="editCode" class="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none mt-1" />
+			</div>
+			<button onclick="saveEdit()" class="w-full bg-white text-black font-bold py-2 rounded hover:bg-electric hover:text-white transition-colors mt-2">UPDATE SUBJECT</button>
+		</div>
+	</div>
+</div>
+
+<div class="max-w-7xl mx-auto space-y-12 px-4 sm:px-0 reveal">
+	<header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-white/10 pb-8">
+		<div class="text-center sm:text-left">
+			<h1 class="text-4xl font-bold mb-2">DASHBOARD</h1>
+			<p class="font-mono text-electric">SYSTEM STATUS: ACTIVE</p>
+		</div>
+		<div class="flex items-center gap-4">
+			<span class="text-xs font-mono text-white/40" id="lastUpdated">SYNCED</span>
+			<button onclick="logout()" class="text-xs font-mono text-white/40 hover:text-red-500 transition-colors">TERMINATE SESSION</button>
+		</div>
+	</header>
+
+	<!-- Stats / Bento Grid -->
+	<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+		<div class="glass p-6 rounded-2xl border-l-4 border-electric text-center sm:text-left">
+			<h3 class="text-xs font-mono text-white/50 mb-2">TOTAL SUBJECTS</h3>
+			<p class="text-4xl font-bold" id="totalSubjects">-</p>
+		</div>
+		<div class="glass p-6 rounded-2xl border-l-4 border-cyber text-center sm:text-left">
+			<h3 class="text-xs font-mono text-white/50 mb-2">ACTIVE STREAMS</h3>
+			<p class="text-4xl font-bold" id="totalStreams">-</p>
+		</div>
+		<div class="glass p-6 rounded-2xl border-l-4 border-purple-500 text-center sm:text-left">
+			<h3 class="text-xs font-mono text-white/50 mb-2">LOGGED EVENTS</h3>
+			<p class="text-4xl font-bold" id="totalLogs">-</p>
+		</div>
+		<div class="glass p-6 rounded-2xl border-l-4 border-acid text-center sm:text-left">
+			<h3 class="text-xs font-mono text-white/50 mb-2">SYSTEM HEALTH</h3>
+			<p class="text-4xl font-bold text-acid">100%</p>
+		</div>
+	</div>
+
+	<!-- Main Content Tabs -->
+	<div class="space-y-6">
+		<div class="flex flex-wrap gap-2 sm:gap-4 border-b border-white/10 pb-1">
+			<button onclick="switchMainTab('subjects')" id="main-tab-subjects" class="px-4 py-2 text-sm font-bold border-b-2 border-electric text-white">SUBJECTS</button>
+			<button onclick="switchMainTab('streams')" id="main-tab-streams" class="px-4 py-2 text-sm font-bold border-b-2 border-transparent text-white/50 hover:text-white">STREAMS</button>
+			<button onclick="switchMainTab('logs')" id="main-tab-logs" class="px-4 py-2 text-sm font-bold border-b-2 border-transparent text-white/50 hover:text-white">LOGS</button>
+		</div>
+
+		<!-- Subjects Panel -->
+		<div id="panel-subjects" class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+			<!-- Add New Subject -->
+			<div class="lg:col-span-1 space-y-6">
+				<div class="glass p-4 sm:p-6 rounded-2xl space-y-4">
+					<h3 class="text-lg font-bold flex items-center gap-2">
+						<svg class="w-5 h-5 text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+						ADD NEW SUBJECT
+					</h3>
+					<div class="space-y-3">
+						<div>
+							<label class="text-xs font-mono text-white/40">CATEGORY</label>
+							<div class="flex gap-2 mt-1">
+								<button onclick="setNewSubjectCategory('general')" id="btn-cat-general" class="flex-1 py-2 rounded bg-electric text-white text-xs font-bold transition-all">CS</button>
+								<button onclick="setNewSubjectCategory('ece')" id="btn-cat-ece" class="flex-1 py-2 rounded bg-white/5 text-white/50 text-xs font-bold hover:bg-white/10 transition-all">ECE</button>
+								<button onclick="setNewSubjectCategory('aiml')" id="btn-cat-aiml" class="flex-1 py-2 rounded bg-white/5 text-white/50 text-xs font-bold hover:bg-white/10 transition-all">AIML</button>
+							</div>
+						</div>
+						<div>
+							<label class="text-xs font-mono text-white/40">SUBJECT NAME</label>
+							<input type="text" id="newSubjectName" class="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none mt-1" placeholder="e.g. Data Structures" />
+						</div>
+						<div>
+							<label class="text-xs font-mono text-white/40">SUBJECT CODE</label>
+							<input type="text" id="newSubjectCode" class="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none mt-1" placeholder="e.g. PCC-CS301" />
+						</div>
+						<button onclick="addSubject()" class="w-full bg-white text-black font-bold py-2 rounded hover:bg-electric hover:text-white transition-colors mt-2">ADD TO DATABASE</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Subject List -->
+			<div class="lg:col-span-2">
+				<div class="glass rounded-2xl overflow-hidden flex flex-col h-[60vh] sm:h-[600px]">
+					<div class="p-4 sm:p-5 border-b border-white/5 bg-white/5 flex flex-wrap gap-3 justify-between items-center">
+						<h3 class="font-bold">DATABASE ENTRIES</h3>
+						<div class="flex gap-2">
+							<input type="text" id="searchSubjects" onkeyup="filterSubjects()" placeholder="Search..." class="bg-black/20 border border-white/10 rounded px-3 py-1 text-xs text-white focus:border-electric focus:outline-none" />
+						</div>
+					</div>
+					<div class="overflow-y-auto p-2 space-y-1 flex-1" id="subjectList">
+						<!-- Populated by JS -->
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Streams Panel -->
+		<div id="panel-streams" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+			<div class="glass p-4 sm:p-6 rounded-2xl space-y-6">
+				<h3 class="text-lg font-bold">MANAGE STREAMS</h3>
+				<p class="text-sm text-white/50">Configure the stream labels mapped to numeric IDs.</p>
+
+				<div class="space-y-4">
+					<div class="flex gap-2">
+						<input type="number" id="newStreamId" placeholder="ID (e.g. 5)" class="w-24 bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none" />
+						<input type="text" id="newStreamLabel" placeholder="Label (e.g. ME - Mechanical)" class="flex-1 bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none" />
+						<button onclick="addStream()" class="bg-electric text-white px-4 rounded font-bold hover:bg-electric/80">ADD</button>
+					</div>
+				</div>
+
+				<div class="mt-8 space-y-2" id="streamList">
+					<!-- Populated by JS -->
+				</div>
+			</div>
+		</div>
+
+		<!-- Logs Panel -->
+		<div id="panel-logs" class="hidden">
+			<div class="glass rounded-2xl overflow-hidden">
+				<div class="p-4 sm:p-5 border-b border-white/5 bg-white/5 flex flex-wrap gap-3 justify-between items-center">
+					<h3 class="font-bold">SYSTEM LOGS</h3>
+					<button onclick="loadData()" class="text-xs text-electric hover:text-white">REFRESH</button>
+				</div>
+				<div class="max-h-[600px] overflow-y-auto p-4 space-y-2" id="logList">
+					<!-- Populated by JS -->
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	let API_KEY = localStorage.getItem("admin_key");
+	let newSubjectCategory = "general";
+	let editSubjectCategory = "general";
+	let subjectsData = { subjects: [], ece_subjects: [], aiml_subjects: [], subject_codes: {}, stream_labels: {} };
+
+	if (API_KEY) {
+		document.getElementById("authModal").style.display = "none";
+		loadData();
+	}
+
+	function authenticate() {
+		const key = document.getElementById("apiKeyInput").value;
+		if (key) {
+			API_KEY = key;
+			localStorage.setItem("admin_key", key);
+			document.getElementById("authModal").style.display = "none";
+			loadData();
+		}
+	}
+
+	function logout() {
+		localStorage.removeItem("admin_key");
+		location.reload();
+	}
+
+	async function fetchWithAuth(url, options = {}) {
+		if (!options.headers) options.headers = {};
+		options.headers["X-Admin-Key"] = API_KEY;
+		options.headers["Content-Type"] = "application/json";
+
+		const res = await fetch(url, options);
+		if (res.status === 401 || res.status === 403) {
+			logout();
+			return null;
+		}
+		return res.json();
+	}
+
+	async function loadData() {
+		// Load Subjects & Streams
+		const subData = await fetchWithAuth("/admin/subjects");
+		if (subData) {
+			subjectsData = subData;
+			renderSubjects();
+			renderStreams();
+			document.getElementById("totalSubjects").innerText = subData.subjects.length + subData.ece_subjects.length + subData.aiml_subjects.length;
+			document.getElementById("totalStreams").innerText = Object.keys(subData.stream_labels || {}).length;
+		}
+
+		// Load Logs
+		const logData = await fetchWithAuth("/admin/logs?limit=100");
+		if (logData) {
+			renderLogs(logData.logs);
+			document.getElementById("totalLogs").innerText = logData.logs.length;
+		}
+
+		document.getElementById("lastUpdated").innerText = "SYNCED " + new Date().toLocaleTimeString();
+	}
+
+	// --- TABS ---
+	function switchMainTab(tab) {
+		["subjects", "streams", "logs"].forEach((t) => {
+			document.getElementById(`panel-${t}`).classList.add("hidden");
+			const btn = document.getElementById(`main-tab-${t}`);
+			btn.classList.remove("border-electric", "text-white");
+			btn.classList.add("border-transparent", "text-white/50");
+		});
+
+		document.getElementById(`panel-${tab}`).classList.remove("hidden");
+		const activeBtn = document.getElementById(`main-tab-${tab}`);
+		activeBtn.classList.remove("border-transparent", "text-white/50");
+		activeBtn.classList.add("border-electric", "text-white");
+	}
+
+	// --- SUBJECTS ---
+	function setNewSubjectCategory(cat) {
+		newSubjectCategory = cat;
+		const genBtn = document.getElementById("btn-cat-general");
+		const eceBtn = document.getElementById("btn-cat-ece");
+		const aimlBtn = document.getElementById("btn-cat-aiml");
+
+		// Reset all
+		[genBtn, eceBtn, aimlBtn].forEach((btn) => {
+			btn.className = "flex-1 py-2 rounded bg-white/5 text-white/50 text-xs font-bold hover:bg-white/10 transition-all";
+		});
+
+		// Activate selected
+		const activeClass = "flex-1 py-2 rounded bg-electric text-white text-xs font-bold transition-all";
+		if (cat === "general") genBtn.className = activeClass;
+		else if (cat === "ece") eceBtn.className = activeClass;
+		else if (cat === "aiml") aimlBtn.className = activeClass;
+	}
+
+	function renderSubjects() {
+		const list = document.getElementById("subjectList");
+		list.innerHTML = "";
+		const filter = document.getElementById("searchSubjects").value.toLowerCase();
+
+		const allSubjects = [...subjectsData.subjects.map((s) => ({ name: s, type: "CS" })), ...subjectsData.ece_subjects.map((s) => ({ name: s, type: "ECE" })), ...subjectsData.aiml_subjects.map((s) => ({ name: s, type: "AIML" }))];
+
+		allSubjects.sort((a, b) => a.name.localeCompare(b.name));
+
+		allSubjects.forEach((sub) => {
+			if (sub.name.toLowerCase().includes(filter)) {
+				const code = subjectsData.subject_codes[sub.name] || "N/A";
+				let typeColor = "bg-electric/20 text-electric";
+				if (sub.type === "ECE") typeColor = "bg-cyber/20 text-cyber";
+				if (sub.type === "AIML") typeColor = "bg-acid/20 text-acid";
+
+				const div = document.createElement("div");
+				div.className = "flex justify-between items-center p-3 hover:bg-white/5 rounded-lg group transition-colors border border-transparent hover:border-white/5";
+				div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${typeColor}">${sub.type}</span>
+                        <div>
+                            <div class="font-medium text-sm text-white">${sub.name}</div>
+                            <div class="text-xs font-mono text-white/30">${code}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="editSubject('${sub.name}', '${sub.type}')" class="p-2 hover:bg-white/10 rounded text-white/50 hover:text-electric transition-colors" title="Edit Subject">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        </button>
+                        <button onclick="removeSubject('${sub.name}')" class="p-2 hover:bg-white/10 rounded text-white/50 hover:text-red-500 transition-colors" title="Remove Subject">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                `;
+				list.appendChild(div);
+			}
+		});
+	}
+
+	function filterSubjects() {
+		renderSubjects();
+	}
+
+	async function addSubject() {
+		const name = document.getElementById("newSubjectName").value;
+		const code = document.getElementById("newSubjectCode").value;
+		if (!name) return;
+
+		await fetchWithAuth("/admin/subjects", {
+			method: "POST",
+			body: JSON.stringify({ name, code, category: newSubjectCategory }),
+		});
+
+		document.getElementById("newSubjectName").value = "";
+		document.getElementById("newSubjectCode").value = "";
+		loadData();
+	}
+
+	async function removeSubject(name) {
+		if (!confirm("Delete " + name + "?")) return;
+		await fetchWithAuth("/admin/subjects", {
+			method: "DELETE",
+			body: JSON.stringify({ name, remove_code: true }),
+		});
+		loadData();
+	}
+
+	function editSubject(name, type) {
+		document.getElementById("editOriginalName").value = name;
+		document.getElementById("editName").value = name;
+		document.getElementById("editCode").value = subjectsData.subject_codes[name] || "";
+
+		let category = "general";
+		if (type === "ECE") category = "ece";
+		if (type === "AIML") category = "aiml";
+
+		setEditCategory(category);
+		openEditModal();
+	}
+
+	function setEditCategory(cat) {
+		editSubjectCategory = cat;
+		const genBtn = document.getElementById("btn-edit-general");
+		const eceBtn = document.getElementById("btn-edit-ece");
+		const aimlBtn = document.getElementById("btn-edit-aiml");
+
+		// Reset all
+		[genBtn, eceBtn, aimlBtn].forEach((btn) => {
+			btn.className = "flex-1 py-2 rounded bg-white/5 text-white/50 text-xs font-bold hover:bg-white/10 transition-all";
+		});
+
+		// Activate selected
+		const activeClass = "flex-1 py-2 rounded bg-electric text-white text-xs font-bold transition-all";
+		if (cat === "general") genBtn.className = activeClass;
+		else if (cat === "ece") eceBtn.className = activeClass;
+		else if (cat === "aiml") aimlBtn.className = activeClass;
+	}
+
+	function openEditModal() {
+		document.getElementById("editModal").classList.remove("hidden");
+	}
+
+	function closeEditModal() {
+		document.getElementById("editModal").classList.add("hidden");
+	}
+
+	async function saveEdit() {
+		const originalName = document.getElementById("editOriginalName").value;
+		const name = document.getElementById("editName").value;
+		const code = document.getElementById("editCode").value;
+		const category = editSubjectCategory;
+
+		if (!name) return;
+
+		await fetchWithAuth("/admin/subjects", {
+			method: "PUT",
+			body: JSON.stringify({ original_name: originalName, name, code, category }),
+		});
+
+		closeEditModal();
+		loadData();
+	}
+
+	// --- STREAMS ---
+	function renderStreams() {
+		const list = document.getElementById("streamList");
+		list.innerHTML = "";
+		const streams = subjectsData.stream_labels || {};
+
+		Object.entries(streams).forEach(([id, label]) => {
+			const div = document.createElement("div");
+			div.className = "flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5";
+			div.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <div class="w-8 h-8 rounded bg-black/40 flex items-center justify-center font-mono text-xs text-white/50">${id}</div>
+                    <div class="font-bold text-sm">${label}</div>
+                </div>
+                <button onclick="removeStream('${id}')" class="text-white/20 hover:text-red-500 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            `;
+			list.appendChild(div);
+		});
+	}
+
+	async function addStream() {
+		const id = document.getElementById("newStreamId").value;
+		const label = document.getElementById("newStreamLabel").value;
+		if (!id || !label) return;
+
+		await fetchWithAuth("/admin/streams", {
+			method: "POST",
+			body: JSON.stringify({ id, label }),
+		});
+
+		document.getElementById("newStreamId").value = "";
+		document.getElementById("newStreamLabel").value = "";
+		loadData();
+	}
+
+	async function removeStream(id) {
+		if (!confirm("Delete Stream ID " + id + "?")) return;
+		await fetchWithAuth("/admin/streams", {
+			method: "DELETE",
+			body: JSON.stringify({ id }),
+		});
+		loadData();
+	}
+
+	// --- LOGS ---
+	function renderLogs(logs) {
+		const list = document.getElementById("logList");
+		list.innerHTML = "";
+		logs.forEach((log) => {
+			const div = document.createElement("div");
+			div.className = "grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 p-3 bg-black/20 rounded border border-white/5 text-xs font-mono hover:bg-white/5 transition-colors";
+			const logDate = new Date(log.timestamp);
+			div.innerHTML = `
+					<div class="text-white/40 sm:col-span-3">${logDate.toLocaleDateString()}<br class="hidden sm:block">${logDate.toLocaleTimeString()}</div>
+					<div class="text-electric font-bold truncate sm:col-span-3">${log.name}</div>
+					<div class="text-white/60 sm:col-span-2">${log.roll}</div>
+					<div class="text-white/60 truncate sm:col-span-2">${log.subject}</div>
+					<div class="text-cyber text-right sm:col-span-2">${log.stream}</div>
+				`;
+			list.appendChild(div);
+		});
+	}
+</script>
+{% endblock %}
