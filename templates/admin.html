@@ -1,453 +1,560 @@
 {% extends "layout.html" %} {% block content %}
 <div id="authModal" class="fixed inset-0 z-[100] bg-obsidian/90 backdrop-blur-xl flex items-center justify-center px-4">
-	<div class="glass p-6 sm:p-8 rounded-2xl w-full max-w-md text-center space-y-6">
-		<div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-			<svg class="w-8 h-8 text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-		</div>
-		<h2 class="text-2xl font-bold">Admin Access Required</h2>
-		<p class="text-white/50">Enter your secure API key to access the dashboard.</p>
-		<input type="password" id="apiKeyInput" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-center font-mono text-white focus:border-electric focus:outline-none" placeholder="API KEY" />
-		<button onclick="authenticate()" class="w-full bg-electric text-white font-bold py-3 rounded-xl hover:bg-electric/80 transition-colors">AUTHENTICATE</button>
-	</div>
+  <div class="glass p-6 sm:p-8 rounded-2xl w-full max-w-md text-center space-y-6">
+    <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+        </path>
+      </svg>
+    </div>
+    <h2 class="text-2xl font-bold">Admin Access Required</h2>
+    <p class="text-white/50">Enter your secure API key to access the dashboard.</p>
+    <input type="password" id="apiKeyInput"
+      class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-center font-mono text-white focus:border-electric focus:outline-none"
+      placeholder="API KEY" />
+    <button onclick="authenticate()"
+      class="w-full bg-electric text-white font-bold py-3 rounded-xl hover:bg-electric/80 transition-colors">AUTHENTICATE</button>
+  </div>
 </div>
 
 <!-- Edit Modal -->
-<div id="editModal" class="hidden fixed inset-0 z-[50] bg-obsidian/90 backdrop-blur-xl flex items-center justify-center px-4">
-	<div class="glass p-6 sm:p-8 rounded-2xl w-full max-w-md space-y-6 relative">
-		<button onclick="closeEditModal()" class="absolute top-4 right-4 text-white/50 hover:text-white">
-			<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-		</button>
-		<h2 class="text-2xl font-bold flex items-center gap-2">
-			<svg class="w-5 h-5 text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-			EDIT SUBJECT
-		</h2>
-		<input type="hidden" id="editOriginalName" />
+<div id="editModal"
+  class="hidden fixed inset-0 z-[50] bg-obsidian/90 backdrop-blur-xl flex items-center justify-center px-4">
+  <div class="glass p-6 sm:p-8 rounded-2xl w-full max-w-md space-y-6 relative">
+    <button onclick="closeEditModal()" class="absolute top-4 right-4 text-white/50 hover:text-white">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
+    <h2 class="text-2xl font-bold flex items-center gap-2">
+      <svg class="w-5 h-5 text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+        </path>
+      </svg>
+      EDIT SUBJECT
+    </h2>
+    <input type="hidden" id="editOfferingId" />
 
-		<div class="space-y-3">
-			<div>
-				<label class="text-xs font-mono text-white/40">CATEGORY</label>
-				<div class="flex gap-2 mt-1">
-					<button onclick="setEditCategory('general')" id="btn-edit-general" class="flex-1 py-2 rounded bg-white/5 text-white/50 text-xs font-bold hover:bg-white/10 transition-all">CS</button>
-					<button onclick="setEditCategory('ece')" id="btn-edit-ece" class="flex-1 py-2 rounded bg-white/5 text-white/50 text-xs font-bold hover:bg-white/10 transition-all">ECE</button>
-					<button onclick="setEditCategory('aiml')" id="btn-edit-aiml" class="flex-1 py-2 rounded bg-white/5 text-white/50 text-xs font-bold hover:bg-white/10 transition-all">AIML</button>
-				</div>
-			</div>
-			<div>
-				<label class="text-xs font-mono text-white/40">SUBJECT NAME</label>
-				<input type="text" id="editName" class="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none mt-1" />
-			</div>
-			<div>
-				<label class="text-xs font-mono text-white/40">SUBJECT CODE</label>
-				<input type="text" id="editCode" class="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none mt-1" />
-			</div>
-			<button onclick="saveEdit()" class="w-full bg-white text-black font-bold py-2 rounded hover:bg-electric hover:text-white transition-colors mt-2">UPDATE SUBJECT</button>
-		</div>
-	</div>
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs font-mono text-white/40">SEMESTER</label>
+        <select id="editSemester"
+          class="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none mt-1"></select>
+      </div>
+      <div>
+        <label class="text-xs font-mono text-white/40">SUBJECT NAME</label>
+        <input type="text" id="editName"
+          class="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none mt-1" />
+      </div>
+      <div>
+        <label class="text-xs font-mono text-white/40">SUBJECT CODE</label>
+        <input type="text" id="editCode"
+          class="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none mt-1" />
+      </div>
+      <button onclick="saveEdit()"
+        class="w-full bg-white text-black font-bold py-2 rounded hover:bg-electric hover:text-white transition-colors mt-2">UPDATE
+        SUBJECT</button>
+    </div>
+  </div>
 </div>
 
 <div class="max-w-7xl mx-auto space-y-12 px-4 sm:px-0 reveal">
-	<header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-white/10 pb-8">
-		<div class="text-center sm:text-left">
-			<h1 class="text-4xl font-bold mb-2">DASHBOARD</h1>
-			<p class="font-mono text-electric">SYSTEM STATUS: ACTIVE</p>
-		</div>
-		<div class="flex items-center gap-4">
-			<span class="text-xs font-mono text-white/40" id="lastUpdated">SYNCED</span>
-			<button onclick="logout()" class="text-xs font-mono text-white/40 hover:text-red-500 transition-colors">TERMINATE SESSION</button>
-		</div>
-	</header>
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-white/10 pb-8">
+    <div class="text-center sm:text-left">
+      <h1 class="text-4xl font-bold mb-2">DASHBOARD</h1>
+      <p class="font-mono text-electric">SYSTEM STATUS: ACTIVE</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <span class="text-xs font-mono text-white/40" id="lastUpdated">SYNCED</span>
+      <button onclick="logout()" class="text-xs font-mono text-white/40 hover:text-red-500 transition-colors">TERMINATE
+        SESSION</button>
+    </div>
+  </header>
 
-	<!-- Stats / Bento Grid -->
-	<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-		<div class="glass p-6 rounded-2xl border-l-4 border-electric text-center sm:text-left">
-			<h3 class="text-xs font-mono text-white/50 mb-2">TOTAL SUBJECTS</h3>
-			<p class="text-4xl font-bold" id="totalSubjects">-</p>
-		</div>
-		<div class="glass p-6 rounded-2xl border-l-4 border-cyber text-center sm:text-left">
-			<h3 class="text-xs font-mono text-white/50 mb-2">ACTIVE STREAMS</h3>
-			<p class="text-4xl font-bold" id="totalStreams">-</p>
-		</div>
-		<div class="glass p-6 rounded-2xl border-l-4 border-purple-500 text-center sm:text-left">
-			<h3 class="text-xs font-mono text-white/50 mb-2">LOGGED EVENTS</h3>
-			<p class="text-4xl font-bold" id="totalLogs">-</p>
-		</div>
-		<div class="glass p-6 rounded-2xl border-l-4 border-acid text-center sm:text-left">
-			<h3 class="text-xs font-mono text-white/50 mb-2">SYSTEM HEALTH</h3>
-			<p class="text-4xl font-bold text-acid">100%</p>
-		</div>
-	</div>
+  <!-- Stats / Bento Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+    <div class="glass p-6 rounded-2xl border-l-4 border-electric text-center sm:text-left">
+      <h3 class="text-xs font-mono text-white/50 mb-2">TOTAL SUBJECTS</h3>
+      <p class="text-4xl font-bold" id="totalSubjects">-</p>
+    </div>
+    <div class="glass p-6 rounded-2xl border-l-4 border-cyber text-center sm:text-left">
+      <h3 class="text-xs font-mono text-white/50 mb-2">ACTIVE STREAMS</h3>
+      <p class="text-4xl font-bold" id="totalStreams">-</p>
+    </div>
+    <div class="glass p-6 rounded-2xl border-l-4 border-purple-500 text-center sm:text-left">
+      <h3 class="text-xs font-mono text-white/50 mb-2">LOGGED EVENTS</h3>
+      <p class="text-4xl font-bold" id="totalLogs">-</p>
+    </div>
+    <div class="glass p-6 rounded-2xl border-l-4 border-acid text-center sm:text-left">
+      <h3 class="text-xs font-mono text-white/50 mb-2">SYSTEM HEALTH</h3>
+      <p class="text-4xl font-bold text-acid">100%</p>
+    </div>
+  </div>
 
-	<!-- Main Content Tabs -->
-	<div class="space-y-6">
-		<div class="flex flex-wrap gap-2 sm:gap-4 border-b border-white/10 pb-1">
-			<button onclick="switchMainTab('subjects')" id="main-tab-subjects" class="px-4 py-2 text-sm font-bold border-b-2 border-electric text-white">SUBJECTS</button>
-			<button onclick="switchMainTab('streams')" id="main-tab-streams" class="px-4 py-2 text-sm font-bold border-b-2 border-transparent text-white/50 hover:text-white">STREAMS</button>
-			<button onclick="switchMainTab('logs')" id="main-tab-logs" class="px-4 py-2 text-sm font-bold border-b-2 border-transparent text-white/50 hover:text-white">LOGS</button>
-		</div>
+  <!-- Main Content Tabs -->
+  <div class="space-y-6">
+    <div class="flex flex-wrap gap-2 sm:gap-4 border-b border-white/10 pb-1">
+      <button onclick="switchMainTab('subjects')" id="main-tab-subjects"
+        class="px-4 py-2 text-sm font-bold border-b-2 border-electric text-white">SUBJECTS</button>
+      <button onclick="switchMainTab('streams')" id="main-tab-streams"
+        class="px-4 py-2 text-sm font-bold border-b-2 border-transparent text-white/50 hover:text-white">STREAMS</button>
+      <button onclick="switchMainTab('logs')" id="main-tab-logs"
+        class="px-4 py-2 text-sm font-bold border-b-2 border-transparent text-white/50 hover:text-white">LOGS</button>
+    </div>
 
-		<!-- Subjects Panel -->
-		<div id="panel-subjects" class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-			<!-- Add New Subject -->
-			<div class="lg:col-span-1 space-y-6">
-				<div class="glass p-4 sm:p-6 rounded-2xl space-y-4">
-					<h3 class="text-lg font-bold flex items-center gap-2">
-						<svg class="w-5 h-5 text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-						ADD NEW SUBJECT
-					</h3>
-					<div class="space-y-3">
-						<div>
-							<label class="text-xs font-mono text-white/40">CATEGORY</label>
-							<div class="flex gap-2 mt-1">
-								<button onclick="setNewSubjectCategory('general')" id="btn-cat-general" class="flex-1 py-2 rounded bg-electric text-white text-xs font-bold transition-all">CS</button>
-								<button onclick="setNewSubjectCategory('ece')" id="btn-cat-ece" class="flex-1 py-2 rounded bg-white/5 text-white/50 text-xs font-bold hover:bg-white/10 transition-all">ECE</button>
-								<button onclick="setNewSubjectCategory('aiml')" id="btn-cat-aiml" class="flex-1 py-2 rounded bg-white/5 text-white/50 text-xs font-bold hover:bg-white/10 transition-all">AIML</button>
-							</div>
-						</div>
-						<div>
-							<label class="text-xs font-mono text-white/40">SUBJECT NAME</label>
-							<input type="text" id="newSubjectName" class="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none mt-1" placeholder="e.g. Data Structures" />
-						</div>
-						<div>
-							<label class="text-xs font-mono text-white/40">SUBJECT CODE</label>
-							<input type="text" id="newSubjectCode" class="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none mt-1" placeholder="e.g. PCC-CS301" />
-						</div>
-						<button onclick="addSubject()" class="w-full bg-white text-black font-bold py-2 rounded hover:bg-electric hover:text-white transition-colors mt-2">ADD TO DATABASE</button>
-					</div>
-				</div>
-			</div>
+    <!-- Subjects Panel -->
+    <div id="panel-subjects" class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <!-- Add New Subject -->
+      <div class="lg:col-span-1 space-y-6">
+        <div class="glass p-4 sm:p-6 rounded-2xl space-y-4">
+          <h3 class="text-lg font-bold flex items-center gap-2">
+            <svg class="w-5 h-5 text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6">
+              </path>
+            </svg>
+            ADD NEW SUBJECT
+          </h3>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs font-mono text-white/40">SEMESTER</label>
+              <select id="newSubjectSemester"
+                class="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none mt-1"></select>
+            </div>
+            <div>
+              <label class="text-xs font-mono text-white/40">SUBJECT NAME</label>
+              <input type="text" id="newSubjectName"
+                class="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none mt-1"
+                placeholder="e.g. Data Structures" />
+            </div>
+            <div>
+              <label class="text-xs font-mono text-white/40">SUBJECT CODE</label>
+              <input type="text" id="newSubjectCode"
+                class="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none mt-1"
+                placeholder="e.g. PCC-CS301" />
+            </div>
+            <button onclick="addSubject()"
+              class="w-full bg-white text-black font-bold py-2 rounded hover:bg-electric hover:text-white transition-colors mt-2">ADD
+              TO DATABASE</button>
+          </div>
+        </div>
+      </div>
 
-			<!-- Subject List -->
-			<div class="lg:col-span-2">
-				<div class="glass rounded-2xl overflow-hidden flex flex-col h-[60vh] sm:h-[600px]">
-					<div class="p-4 sm:p-5 border-b border-white/5 bg-white/5 flex flex-wrap gap-3 justify-between items-center">
-						<h3 class="font-bold">DATABASE ENTRIES</h3>
-						<div class="flex gap-2">
-							<input type="text" id="searchSubjects" onkeyup="filterSubjects()" placeholder="Search..." class="bg-black/20 border border-white/10 rounded px-3 py-1 text-xs text-white focus:border-electric focus:outline-none" />
-						</div>
-					</div>
-					<div class="overflow-y-auto p-2 space-y-1 flex-1" id="subjectList">
-						<!-- Populated by JS -->
-					</div>
-				</div>
-			</div>
-		</div>
+      <!-- Subject List -->
+      <div class="lg:col-span-2">
+        <div class="glass rounded-2xl overflow-hidden flex flex-col h-[60vh] sm:h-[600px]">
+          <div class="p-4 sm:p-5 border-b border-white/5 bg-white/5 flex flex-wrap gap-3 justify-between items-center">
+            <h3 class="font-bold">DATABASE ENTRIES</h3>
+            <div class="flex gap-2">
+              <input type="text" id="searchSubjects" onkeyup="filterSubjects()" placeholder="Search..."
+                class="bg-black/20 border border-white/10 rounded px-3 py-1 text-xs text-white focus:border-electric focus:outline-none" />
+            </div>
+          </div>
+          <div class="overflow-y-auto p-2 space-y-1 flex-1" id="subjectList">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
 
-		<!-- Streams Panel -->
-		<div id="panel-streams" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
-			<div class="glass p-4 sm:p-6 rounded-2xl space-y-6">
-				<h3 class="text-lg font-bold">MANAGE STREAMS</h3>
-				<p class="text-sm text-white/50">Configure the stream labels mapped to numeric IDs.</p>
+    <!-- Streams Panel -->
+    <div id="panel-streams" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="glass p-4 sm:p-6 rounded-2xl space-y-6">
+        <h3 class="text-lg font-bold">MANAGE STREAMS</h3>
+        <p class="text-sm text-white/50">Create and remove academic streams used across semesters.</p>
 
-				<div class="space-y-4">
-					<div class="flex gap-2">
-						<input type="number" id="newStreamId" placeholder="ID (e.g. 5)" class="w-24 bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none" />
-						<input type="text" id="newStreamLabel" placeholder="Label (e.g. ME - Mechanical)" class="flex-1 bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none" />
-						<button onclick="addStream()" class="bg-electric text-white px-4 rounded font-bold hover:bg-electric/80">ADD</button>
-					</div>
-				</div>
+        <div class="space-y-4">
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input type="text" id="newStreamLabel" placeholder="Name (e.g. CSE AI/ML)"
+              class="flex-1 bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none" />
+            <input type="text" id="newStreamCode" placeholder="Short Code (optional)"
+              class="flex-1 bg-black/20 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-electric focus:outline-none" />
+            <button onclick="addStream()"
+              class="bg-electric text-white px-4 rounded font-bold hover:bg-electric/80">ADD</button>
+          </div>
+        </div>
 
-				<div class="mt-8 space-y-2" id="streamList">
-					<!-- Populated by JS -->
-				</div>
-			</div>
-		</div>
+        <div class="mt-8 space-y-2" id="streamList">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
 
-		<!-- Logs Panel -->
-		<div id="panel-logs" class="hidden">
-			<div class="glass rounded-2xl overflow-hidden">
-				<div class="p-4 sm:p-5 border-b border-white/5 bg-white/5 flex flex-wrap gap-3 justify-between items-center">
-					<h3 class="font-bold">SYSTEM LOGS</h3>
-					<button onclick="loadData()" class="text-xs text-electric hover:text-white">REFRESH</button>
-				</div>
-				<div class="max-h-[600px] overflow-y-auto p-4 space-y-2" id="logList">
-					<!-- Populated by JS -->
-				</div>
-			</div>
-		</div>
-	</div>
+    <!-- Logs Panel -->
+    <div id="panel-logs" class="hidden">
+      <div class="glass rounded-2xl overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-white/5 bg-white/5 flex flex-wrap gap-3 justify-between items-center">
+          <h3 class="font-bold">SYSTEM LOGS</h3>
+          <button onclick="loadData()" class="text-xs text-electric hover:text-white">REFRESH</button>
+        </div>
+        <div class="max-h-[600px] overflow-y-auto p-4 space-y-2" id="logList">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-	let API_KEY = localStorage.getItem("admin_key");
-	let newSubjectCategory = "general";
-	let editSubjectCategory = "general";
-	let subjectsData = { subjects: [], ece_subjects: [], aiml_subjects: [], subject_codes: {}, stream_labels: {} };
+  let API_KEY = localStorage.getItem("admin_key");
+  const adminState = {
+    catalog: [],
+    streams: [],
+    semesters: [],
+    offerings: [],
+  };
 
-	if (API_KEY) {
-		document.getElementById("authModal").style.display = "none";
-		loadData();
-	}
+  if (API_KEY) {
+    document.getElementById("authModal").style.display = "none";
+    loadData();
+  }
 
-	function authenticate() {
-		const key = document.getElementById("apiKeyInput").value;
-		if (key) {
-			API_KEY = key;
-			localStorage.setItem("admin_key", key);
-			document.getElementById("authModal").style.display = "none";
-			loadData();
-		}
-	}
+  function authenticate() {
+    const key = document.getElementById("apiKeyInput").value.trim();
+    if (key) {
+      API_KEY = key;
+      localStorage.setItem("admin_key", key);
+      document.getElementById("authModal").style.display = "none";
+      loadData();
+    }
+  }
 
-	function logout() {
-		localStorage.removeItem("admin_key");
-		location.reload();
-	}
+  function logout() {
+    localStorage.removeItem("admin_key");
+    location.reload();
+  }
 
-	async function fetchWithAuth(url, options = {}) {
-		if (!options.headers) options.headers = {};
-		options.headers["X-Admin-Key"] = API_KEY;
-		options.headers["Content-Type"] = "application/json";
+  async function fetchWithAuth(url, options = {}) {
+    if (!API_KEY) return null;
+    if (!options.headers) options.headers = {};
+    options.headers["X-Admin-Key"] = API_KEY;
+    if (!options.headers["Content-Type"]) {
+      options.headers["Content-Type"] = "application/json";
+    }
 
-		const res = await fetch(url, options);
-		if (res.status === 401 || res.status === 403) {
-			logout();
-			return null;
-		}
-		return res.json();
-	}
+    const res = await fetch(url, options);
+    if (res.status === 401 || res.status === 403) {
+      alert("Session expired. Please authenticate again.");
+      logout();
+      return null;
+    }
+    if (!res.ok) {
+      const message = await res.text();
+      throw new Error(message || "Request failed");
+    }
+    if (res.status === 204) {
+      return null;
+    }
+    return res.json();
+  }
 
-	async function loadData() {
-		// Load Subjects & Streams
-		const subData = await fetchWithAuth("/admin/subjects");
-		if (subData) {
-			subjectsData = subData;
-			renderSubjects();
-			renderStreams();
-			document.getElementById("totalSubjects").innerText = subData.subjects.length + subData.ece_subjects.length + subData.aiml_subjects.length;
-			document.getElementById("totalStreams").innerText = Object.keys(subData.stream_labels || {}).length;
-		}
+  function rebuildOfferings() {
+    const flattened = [];
+    (adminState.catalog || []).forEach((entry, semesterIndex) => {
+      const semesterMeta = {
+        id: entry.semester?.id,
+        label: entry.semester?.label || `Semester ${semesterIndex + 1}`,
+        order: semesterIndex,
+      };
+      (entry.subjects || []).forEach((subject) => {
+        flattened.push({
+          offering_id: subject.offering_id,
+          subject_id: subject.subject_id,
+          name: subject.name,
+          code: subject.code || "N/A",
+          semester: semesterMeta,
+        });
+      });
+    });
+    adminState.offerings = flattened;
+  }
 
-		// Load Logs
-		const logData = await fetchWithAuth("/admin/logs?limit=100");
-		if (logData) {
-			renderLogs(logData.logs);
-			document.getElementById("totalLogs").innerText = logData.logs.length;
-		}
+  function hydrateSelect(selectEl, options, placeholder, getLabel, selectedValue) {
+    if (!selectEl) return;
+    const hasOptions = Array.isArray(options) && options.length > 0;
+    selectEl.disabled = !hasOptions;
+    selectEl.innerHTML = "";
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.disabled = true;
+    defaultOption.selected = !selectedValue;
+    defaultOption.textContent = placeholder;
+    defaultOption.className = "bg-obsidian";
+    selectEl.appendChild(defaultOption);
+    (options || []).forEach((option) => {
+      const opt = document.createElement("option");
+      opt.value = option.id;
+      opt.textContent = getLabel ? getLabel(option) : option.label || option.name;
+      opt.className = "bg-obsidian";
+      if (selectedValue && String(selectedValue) === String(option.id)) {
+        opt.selected = true;
+      }
+      selectEl.appendChild(opt);
+    });
+  }
 
-		document.getElementById("lastUpdated").innerText = "SYNCED " + new Date().toLocaleTimeString();
-	}
+  async function loadData() {
+    try {
+      const subjectResponse = await fetchWithAuth("/admin/subjects");
+      if (subjectResponse) {
+        adminState.catalog = subjectResponse.catalog || [];
+        adminState.streams = subjectResponse.streams || [];
+        adminState.semesters = subjectResponse.semesters || [];
+        rebuildOfferings();
+        hydrateSelect(document.getElementById("newSubjectSemester"), adminState.semesters, "Select Semester", (opt) => opt.label);
+        renderSubjects();
+        renderStreams();
+        document.getElementById("totalSubjects").innerText = adminState.offerings.length;
+        document.getElementById("totalStreams").innerText = adminState.streams.length;
+      }
 
-	// --- TABS ---
-	function switchMainTab(tab) {
-		["subjects", "streams", "logs"].forEach((t) => {
-			document.getElementById(`panel-${t}`).classList.add("hidden");
-			const btn = document.getElementById(`main-tab-${t}`);
-			btn.classList.remove("border-electric", "text-white");
-			btn.classList.add("border-transparent", "text-white/50");
-		});
+      const logResponse = await fetchWithAuth("/admin/logs?limit=100");
+      if (logResponse) {
+        renderLogs(logResponse.logs || []);
+        document.getElementById("totalLogs").innerText = (logResponse.logs || []).length;
+      }
+    } catch (error) {
+      console.error("Failed to load admin data", error);
+      alert("Failed to load admin data. Check console for details.");
+    }
 
-		document.getElementById(`panel-${tab}`).classList.remove("hidden");
-		const activeBtn = document.getElementById(`main-tab-${tab}`);
-		activeBtn.classList.remove("border-transparent", "text-white/50");
-		activeBtn.classList.add("border-electric", "text-white");
-	}
+    document.getElementById("lastUpdated").innerText = "SYNCED " + new Date().toLocaleTimeString();
+  }
 
-	// --- SUBJECTS ---
-	function setNewSubjectCategory(cat) {
-		newSubjectCategory = cat;
-		const genBtn = document.getElementById("btn-cat-general");
-		const eceBtn = document.getElementById("btn-cat-ece");
-		const aimlBtn = document.getElementById("btn-cat-aiml");
+  // --- TABS ---
+  function switchMainTab(tab) {
+    ["subjects", "streams", "logs"].forEach((t) => {
+      document.getElementById(`panel-${t}`).classList.add("hidden");
+      const btn = document.getElementById(`main-tab-${t}`);
+      btn.classList.remove("border-electric", "text-white");
+      btn.classList.add("border-transparent", "text-white/50");
+    });
 
-		// Reset all
-		[genBtn, eceBtn, aimlBtn].forEach((btn) => {
-			btn.className = "flex-1 py-2 rounded bg-white/5 text-white/50 text-xs font-bold hover:bg-white/10 transition-all";
-		});
+    document.getElementById(`panel-${tab}`).classList.remove("hidden");
+    const activeBtn = document.getElementById(`main-tab-${tab}`);
+    activeBtn.classList.remove("border-transparent", "text-white/50");
+    activeBtn.classList.add("border-electric", "text-white");
+  }
 
-		// Activate selected
-		const activeClass = "flex-1 py-2 rounded bg-electric text-white text-xs font-bold transition-all";
-		if (cat === "general") genBtn.className = activeClass;
-		else if (cat === "ece") eceBtn.className = activeClass;
-		else if (cat === "aiml") aimlBtn.className = activeClass;
-	}
+  // --- SUBJECTS ---
+  function renderSubjects() {
+    const list = document.getElementById("subjectList");
+    list.innerHTML = "";
+    const filterText = (document.getElementById("searchSubjects").value || "").toLowerCase();
 
-	function renderSubjects() {
-		const list = document.getElementById("subjectList");
-		list.innerHTML = "";
-		const filter = document.getElementById("searchSubjects").value.toLowerCase();
+    const items = [...adminState.offerings];
+    items.sort((a, b) => {
+      if (a.semester.order !== b.semester.order) {
+        return a.semester.order - b.semester.order;
+      }
+      return a.name.localeCompare(b.name);
+    });
 
-		const allSubjects = [...subjectsData.subjects.map((s) => ({ name: s, type: "CS" })), ...subjectsData.ece_subjects.map((s) => ({ name: s, type: "ECE" })), ...subjectsData.aiml_subjects.map((s) => ({ name: s, type: "AIML" }))];
+    const filtered = items.filter((entry) => {
+      const haystack = `${entry.name} ${entry.code} ${entry.semester.label}`.toLowerCase();
+      return haystack.includes(filterText);
+    });
 
-		allSubjects.sort((a, b) => a.name.localeCompare(b.name));
+    if (!filtered.length) {
+      const empty = document.createElement("div");
+      empty.className = "text-center text-white/40 text-sm py-6";
+      empty.textContent = "No subjects found.";
+      list.appendChild(empty);
+      return;
+    }
 
-		allSubjects.forEach((sub) => {
-			if (sub.name.toLowerCase().includes(filter)) {
-				const code = subjectsData.subject_codes[sub.name] || "N/A";
-				let typeColor = "bg-electric/20 text-electric";
-				if (sub.type === "ECE") typeColor = "bg-cyber/20 text-cyber";
-				if (sub.type === "AIML") typeColor = "bg-acid/20 text-acid";
+    filtered.forEach((entry) => {
+      const div = document.createElement("div");
+      div.className = "flex justify-between items-center p-3 hover:bg-white/5 rounded-lg group transition-colors border border-transparent hover:border-white/5";
+      div.innerHTML = `
+				<div>
+					<div class="font-medium text-sm text-white">${entry.name}</div>
+					<div class="text-xs font-mono text-white/40">${entry.code}</div>
+					<div class="text-[11px] text-white/30">${entry.semester.label}</div>
+				</div>
+				<div class="flex items-center gap-2">
+					<button onclick="editSubject(${entry.offering_id})" class="p-2 hover:bg-white/10 rounded text-white/50 hover:text-electric transition-colors" title="Edit Subject">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+					</button>
+					<button onclick="removeSubject(${entry.offering_id})" class="p-2 hover:bg-white/10 rounded text-white/50 hover:text-red-500 transition-colors" title="Remove Subject">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+					</button>
+				</div>
+			`;
+      list.appendChild(div);
+    });
+  }
 
-				const div = document.createElement("div");
-				div.className = "flex justify-between items-center p-3 hover:bg-white/5 rounded-lg group transition-colors border border-transparent hover:border-white/5";
-				div.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${typeColor}">${sub.type}</span>
-                        <div>
-                            <div class="font-medium text-sm text-white">${sub.name}</div>
-                            <div class="text-xs font-mono text-white/30">${code}</div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="editSubject('${sub.name}', '${sub.type}')" class="p-2 hover:bg-white/10 rounded text-white/50 hover:text-electric transition-colors" title="Edit Subject">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                        </button>
-                        <button onclick="removeSubject('${sub.name}')" class="p-2 hover:bg-white/10 rounded text-white/50 hover:text-red-500 transition-colors" title="Remove Subject">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
-                    </div>
-                `;
-				list.appendChild(div);
-			}
-		});
-	}
+  function filterSubjects() {
+    renderSubjects();
+  }
 
-	function filterSubjects() {
-		renderSubjects();
-	}
+  function getSelectValue(id) {
+    const el = document.getElementById(id);
+    return el ? el.value : "";
+  }
 
-	async function addSubject() {
-		const name = document.getElementById("newSubjectName").value;
-		const code = document.getElementById("newSubjectCode").value;
-		if (!name) return;
+  function resetSelect(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.selectedIndex = 0;
+    }
+  }
 
-		await fetchWithAuth("/admin/subjects", {
-			method: "POST",
-			body: JSON.stringify({ name, code, category: newSubjectCategory }),
-		});
+  async function addSubject() {
+    const semesterId = getSelectValue("newSubjectSemester");
+    const name = document.getElementById("newSubjectName").value.trim();
+    const code = document.getElementById("newSubjectCode").value.trim() || "N/A";
+    if (!name || !semesterId) {
+      alert("Semester and subject name are required.");
+      return;
+    }
 
-		document.getElementById("newSubjectName").value = "";
-		document.getElementById("newSubjectCode").value = "";
-		loadData();
-	}
+    await fetchWithAuth("/admin/subjects", {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        code,
+        semester_id: Number(semesterId),
+      }),
+    });
 
-	async function removeSubject(name) {
-		if (!confirm("Delete " + name + "?")) return;
-		await fetchWithAuth("/admin/subjects", {
-			method: "DELETE",
-			body: JSON.stringify({ name, remove_code: true }),
-		});
-		loadData();
-	}
+    document.getElementById("newSubjectName").value = "";
+    document.getElementById("newSubjectCode").value = "";
+    resetSelect("newSubjectSemester");
+    loadData();
+  }
 
-	function editSubject(name, type) {
-		document.getElementById("editOriginalName").value = name;
-		document.getElementById("editName").value = name;
-		document.getElementById("editCode").value = subjectsData.subject_codes[name] || "";
+  async function removeSubject(offeringId) {
+    if (!offeringId) return;
+    const record = adminState.offerings.find((item) => String(item.offering_id) === String(offeringId));
+    const label = record ? record.name : "this subject";
+    if (!confirm(`Remove ${label}?`)) return;
+    await fetchWithAuth("/admin/subjects", {
+      method: "DELETE",
+      body: JSON.stringify({ offering_id: offeringId }),
+    });
+    loadData();
+  }
 
-		let category = "general";
-		if (type === "ECE") category = "ece";
-		if (type === "AIML") category = "aiml";
+  function editSubject(offeringId) {
+    const record = adminState.offerings.find((item) => String(item.offering_id) === String(offeringId));
+    if (!record) return;
+    document.getElementById("editOfferingId").value = record.offering_id;
+    document.getElementById("editName").value = record.name;
+    document.getElementById("editCode").value = record.code;
+    hydrateSelect(document.getElementById("editSemester"), adminState.semesters, "Select Semester", (opt) => opt.label, record.semester.id);
+    openEditModal();
+  }
 
-		setEditCategory(category);
-		openEditModal();
-	}
+  function openEditModal() {
+    document.getElementById("editModal").classList.remove("hidden");
+  }
 
-	function setEditCategory(cat) {
-		editSubjectCategory = cat;
-		const genBtn = document.getElementById("btn-edit-general");
-		const eceBtn = document.getElementById("btn-edit-ece");
-		const aimlBtn = document.getElementById("btn-edit-aiml");
+  function closeEditModal() {
+    document.getElementById("editModal").classList.add("hidden");
+  }
 
-		// Reset all
-		[genBtn, eceBtn, aimlBtn].forEach((btn) => {
-			btn.className = "flex-1 py-2 rounded bg-white/5 text-white/50 text-xs font-bold hover:bg-white/10 transition-all";
-		});
+  async function saveEdit() {
+    const offeringId = Number(document.getElementById("editOfferingId").value);
+    const semesterId = getSelectValue("editSemester");
+    const name = document.getElementById("editName").value.trim();
+    const code = document.getElementById("editCode").value.trim() || "N/A";
+    if (!offeringId || !semesterId || !name) {
+      alert("All fields are required to update a subject.");
+      return;
+    }
 
-		// Activate selected
-		const activeClass = "flex-1 py-2 rounded bg-electric text-white text-xs font-bold transition-all";
-		if (cat === "general") genBtn.className = activeClass;
-		else if (cat === "ece") eceBtn.className = activeClass;
-		else if (cat === "aiml") aimlBtn.className = activeClass;
-	}
+    await fetchWithAuth("/admin/subjects", {
+      method: "PUT",
+      body: JSON.stringify({
+        offering_id: offeringId,
+        name,
+        code,
+        semester_id: Number(semesterId),
+      }),
+    });
 
-	function openEditModal() {
-		document.getElementById("editModal").classList.remove("hidden");
-	}
+    closeEditModal();
+    loadData();
+  }
 
-	function closeEditModal() {
-		document.getElementById("editModal").classList.add("hidden");
-	}
+  // --- STREAMS ---
+  function renderStreams() {
+    const list = document.getElementById("streamList");
+    list.innerHTML = "";
+    if (!adminState.streams.length) {
+      const empty = document.createElement("div");
+      empty.className = "text-white/40 text-sm";
+      empty.textContent = "No streams configured.";
+      list.appendChild(empty);
+      return;
+    }
 
-	async function saveEdit() {
-		const originalName = document.getElementById("editOriginalName").value;
-		const name = document.getElementById("editName").value;
-		const code = document.getElementById("editCode").value;
-		const category = editSubjectCategory;
+    adminState.streams.forEach((stream) => {
+      const div = document.createElement("div");
+      div.className = "flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5";
+      div.innerHTML = `
+				<div class="flex items-center gap-4">
+					<div class="w-8 h-8 rounded bg-black/40 flex items-center justify-center font-mono text-xs text-white/50">${stream.id}</div>
+					<div>
+						<div class="font-bold text-sm">${stream.name}</div>
+						<div class="text-xs font-mono text-white/40">${stream.short_code || "AUTO"}</div>
+					</div>
+				</div>
+				<button onclick="removeStream(${stream.id})" class="text-white/30 hover:text-red-500 transition-colors" title="Remove Stream">
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+				</button>
+			`;
+      list.appendChild(div);
+    });
+  }
 
-		if (!name) return;
+  async function addStream() {
+    const name = document.getElementById("newStreamLabel").value.trim();
+    const shortCode = document.getElementById("newStreamCode").value.trim();
+    if (!name) {
+      alert("Stream name is required.");
+      return;
+    }
 
-		await fetchWithAuth("/admin/subjects", {
-			method: "PUT",
-			body: JSON.stringify({ original_name: originalName, name, code, category }),
-		});
+    await fetchWithAuth("/admin/streams", {
+      method: "POST",
+      body: JSON.stringify({ name, short_code: shortCode || undefined }),
+    });
 
-		closeEditModal();
-		loadData();
-	}
+    document.getElementById("newStreamLabel").value = "";
+    document.getElementById("newStreamCode").value = "";
+    loadData();
+  }
 
-	// --- STREAMS ---
-	function renderStreams() {
-		const list = document.getElementById("streamList");
-		list.innerHTML = "";
-		const streams = subjectsData.stream_labels || {};
+  async function removeStream(id) {
+    if (!confirm("Remove this stream?")) return;
+    await fetchWithAuth("/admin/streams", {
+      method: "DELETE",
+      body: JSON.stringify({ id }),
+    });
+    loadData();
+  }
 
-		Object.entries(streams).forEach(([id, label]) => {
-			const div = document.createElement("div");
-			div.className = "flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5";
-			div.innerHTML = `
-                <div class="flex items-center gap-4">
-                    <div class="w-8 h-8 rounded bg-black/40 flex items-center justify-center font-mono text-xs text-white/50">${id}</div>
-                    <div class="font-bold text-sm">${label}</div>
-                </div>
-                <button onclick="removeStream('${id}')" class="text-white/20 hover:text-red-500 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            `;
-			list.appendChild(div);
-		});
-	}
-
-	async function addStream() {
-		const id = document.getElementById("newStreamId").value;
-		const label = document.getElementById("newStreamLabel").value;
-		if (!id || !label) return;
-
-		await fetchWithAuth("/admin/streams", {
-			method: "POST",
-			body: JSON.stringify({ id, label }),
-		});
-
-		document.getElementById("newStreamId").value = "";
-		document.getElementById("newStreamLabel").value = "";
-		loadData();
-	}
-
-	async function removeStream(id) {
-		if (!confirm("Delete Stream ID " + id + "?")) return;
-		await fetchWithAuth("/admin/streams", {
-			method: "DELETE",
-			body: JSON.stringify({ id }),
-		});
-		loadData();
-	}
-
-	// --- LOGS ---
-	function renderLogs(logs) {
-		const list = document.getElementById("logList");
-		list.innerHTML = "";
-		logs.forEach((log) => {
-			const div = document.createElement("div");
-			div.className = "grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 p-3 bg-black/20 rounded border border-white/5 text-xs font-mono hover:bg-white/5 transition-colors";
-			const logDate = new Date(log.timestamp);
-			div.innerHTML = `
+  // --- LOGS ---
+  function renderLogs(logs) {
+    const list = document.getElementById("logList");
+    list.innerHTML = "";
+    logs.forEach((log) => {
+      const div = document.createElement("div");
+      div.className = "grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 p-3 bg-black/20 rounded border border-white/5 text-xs font-mono hover:bg-white/5 transition-colors";
+      const logDate = new Date(log.timestamp);
+      div.innerHTML = `
 					<div class="text-white/40 sm:col-span-3">${logDate.toLocaleDateString()}<br class="hidden sm:block">${logDate.toLocaleTimeString()}</div>
 					<div class="text-electric font-bold truncate sm:col-span-3">${log.name}</div>
 					<div class="text-white/60 sm:col-span-2">${log.roll}</div>
 					<div class="text-white/60 truncate sm:col-span-2">${log.subject}</div>
 					<div class="text-cyber text-right sm:col-span-2">${log.stream}</div>
-				`;
-			list.appendChild(div);
-		});
-	}
+			`;
+      list.appendChild(div);
+    });
+  }
 </script>
 {% endblock %}
