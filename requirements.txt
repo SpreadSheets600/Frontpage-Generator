@@ -1,4 +1,5 @@
 Flask
 Flask-SQLAlchemy
 python-dotenv
-Pillow
+uv python pin 3.12
+
