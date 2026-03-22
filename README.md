@@ -97,14 +97,14 @@ This repository now also includes a Cloudflare-oriented path:
 - `GET /api/stats`
 - `GET /api/catalog`
 - `POST /api/generate-pdf`
+- `POST /api/log-generation`
 
 ### What the Worker does
 
 - reads catalog and stats from D1
 - accepts normal-user form input as JSON
-- sends generated HTML to Cloudflare Browser Rendering `/pdf`
-- returns the PDF bytes directly to the browser
-- logs successful generations into D1
+- logs successful client-side generations into D1
+- still exposes the Browser Rendering-backed `/api/generate-pdf` route for compatibility, but the Pages frontend now renders the PDF or PNG locally from `static/template.png` to avoid Browser Rendering rate limits
 
 ### Setup steps
 
@@ -171,7 +171,7 @@ curl -X POST http://127.0.0.1:8787/api/generate-pdf \
 
 The D1 seed is generated from `admin_config.json`, so the local Worker catalog uses the same subject and stream data as the Flask app. Subjects are currently attached to the `1st` semester because `admin_config.json` does not include semester mappings.
 
-Without `LOCAL_RENDER_MODE = "html"`, the PDF route uses Cloudflare Browser Rendering and requires valid Cloudflare credentials plus a publicly reachable template asset URL.
+Without `LOCAL_RENDER_MODE = "html"`, the legacy PDF route uses Cloudflare Browser Rendering and requires valid Cloudflare credentials plus a publicly reachable template asset URL. The current Pages frontend does not depend on that route for normal downloads.
 
 ### Cloudflare deploy checklist
 
@@ -215,12 +215,20 @@ Without `LOCAL_RENDER_MODE = "html"`, the PDF route uses Cloudflare Browser Rend
 
 ## Project Structure
 
-- `main.py`: Flask application and API routes
-- `templates/`: HTML templates (layout, index, admin)
-- `static/`: Static assets (template image, fonts)
-- `admin_config.json`: Configuration for subjects and streams
-- `frontpage_logs.jsonl`: Log of generated documents
-- `requirements.txt`: Python dependencies
+This repository currently ships two runnable paths that share the same academic catalog data:
+
+- `index.html`: standalone static generator page for Cloudflare Pages. It renders PNG/PDF locally in the browser from `static/template.png` and logs usage through the Worker API.
+- `static/`: assets used by the static frontend and the Flask app, including `template.png`, `Sans.ttf`, and the downloadable `index_page.pdf`.
+- `cloudflare-api/src/worker.py`: Cloudflare Python Worker. It serves `/api/catalog`, `/api/stats`, `/api/generate-pdf`, and `/api/log-generation`.
+- `cloudflare-api/wrangler.toml`: Worker deployment config, D1 binding, and public asset origin settings for Pages.
+- `cloudflare-api/schema.sql`: D1 schema for semesters, streams, subjects, and generation logs.
+- `cloudflare-api/generate_seed_sql.py`: generates D1 seed SQL from `admin_config.json`.
+- `main.py`: original Flask app for local/server deployment. It still renders the same frontpage template and provides the admin dashboard flow.
+- `templates/`: Flask templates for the legacy app UI and admin pages.
+- `admin_config.json`: source-of-truth catalog data used by both the Flask app and the D1 seed generator.
+- `frontpage_logs.jsonl`: local append-only generation log used by the Flask path.
+- `requirements.txt`, `pyproject.toml`: Python dependency definitions for the Flask app and local tooling.
+- `package.json`: helper scripts for local Cloudflare Worker development and local static frontend serving.
 
 ## Contributing
 

@@ -302,7 +302,7 @@ def generate_frontpage():
         font = ImageFont.truetype("static/Sans.ttf", size=45)
 
         start_x = 530
-        start_y = 1060
+        start_y = 1080
         line_gap = 87
 
         draw.text((start_x, start_y + 0 * line_gap), name, font=font, fill="black")

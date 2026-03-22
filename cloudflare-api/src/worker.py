@@ -110,6 +110,45 @@ async def response_bytes(response):
     raise TypeError("Unsupported response body reader")
 
 
+def normalized_bool(value, default=True):
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+async def log_generation(env, payload):
+    created_at = datetime.now(timezone.utc).isoformat()
+    await (
+        env.DB.prepare(
+            """
+        INSERT INTO generation_logs (
+          created_at,
+          student_name,
+          roll,
+          registration,
+          subject_name,
+          subject_code,
+          stream_label,
+          semester_label
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        )
+        .bind(
+            created_at,
+            str(payload["name"]).strip(),
+            str(payload["roll"]).strip(),
+            str(payload["reg"]).strip(),
+            str(payload["subject_name"]).strip(),
+            str(payload["subject_code"]).strip(),
+            str(payload["stream_label"]).strip(),
+            str(payload["semester_label"]).strip(),
+        )
+        .run()
+    )
+
+
 def render_frontpage_html(payload, env):
     font_url = env_value(env, "PUBLIC_FONT_URL", "")
 
@@ -465,7 +504,7 @@ class Default(WorkerEntrypoint):
                         ),
                     )
 
-                wants_pdf = bool(payload.get("as_pdf", True))
+                wants_pdf = normalized_bool(payload.get("as_pdf"), default=True)
                 endpoint = "pdf" if wants_pdf else "screenshot"
                 request_body = {"html": html_document}
                 if wants_pdf:
@@ -496,45 +535,28 @@ class Default(WorkerEntrypoint):
 
                 if not browser_response.ok:
                     error_text = await browser_response.text()
+                    error_status = getattr(browser_response, "status", 502)
+                    error_message = "Browser Rendering PDF request failed."
+                    if (
+                        error_status == 429
+                        or "rate limit exceeded" in error_text.lower()
+                    ):
+                        error_status = 429
+                        error_message = (
+                            "Cloudflare Browser Rendering rate limit exceeded."
+                        )
                     return with_cors(
                         self.env,
                         json_response(
                             {
-                                "error": "Browser Rendering PDF request failed.",
+                                "error": error_message,
                                 "details": error_text,
                             },
-                            status=502,
+                            status=error_status,
                         ),
                     )
 
-                created_at = datetime.now(timezone.utc).isoformat()
-                await (
-                    self.env.DB.prepare(
-                        """
-                    INSERT INTO generation_logs (
-                      created_at,
-                      student_name,
-                      roll,
-                      registration,
-                      subject_name,
-                      subject_code,
-                      stream_label,
-                      semester_label
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    """
-                    )
-                    .bind(
-                        created_at,
-                        str(payload["name"]).strip(),
-                        str(payload["roll"]).strip(),
-                        str(payload["reg"]).strip(),
-                        str(payload["subject_name"]).strip(),
-                        str(payload["subject_code"]).strip(),
-                        str(payload["stream_label"]).strip(),
-                        str(payload["semester_label"]).strip(),
-                    )
-                    .run()
-                )
+                await log_generation(self.env, payload)
 
                 document_bytes = await response_bytes(browser_response)
                 download_ext = "pdf" if wants_pdf else "png"
@@ -558,6 +580,45 @@ class Default(WorkerEntrypoint):
                             "details": str(error),
                         },
                         status=502,
+                    ),
+                )
+
+        if path == "/api/log-generation" and method == "POST":
+            payload = await request.json()
+            required_fields = [
+                "name",
+                "roll",
+                "reg",
+                "stream_label",
+                "semester_label",
+                "subject_name",
+                "subject_code",
+            ]
+            missing = require_fields(payload, required_fields)
+            if missing:
+                return with_cors(
+                    self.env,
+                    json_response(
+                        {
+                            "error": "Missing required fields",
+                            "fields": missing,
+                        },
+                        status=400,
+                    ),
+                )
+
+            try:
+                await log_generation(self.env, payload)
+                return with_cors(self.env, json_response({"ok": True}, status=201))
+            except Exception as error:
+                return with_cors(
+                    self.env,
+                    json_response(
+                        {
+                            "error": "Could not log generation.",
+                            "details": str(error),
+                        },
+                        status=500,
                     ),
                 )
 
