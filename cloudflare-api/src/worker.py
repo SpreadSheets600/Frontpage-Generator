@@ -14,7 +14,7 @@ def json_response(data, status=200, extra_headers=None):
 
 
 def allowed_origin(env):
-    return getattr(env, "ALLOWED_ORIGIN", "*") or "*"
+    return env_value(env, "ALLOWED_ORIGIN", "*") or "*"
 
 
 def cors_headers(env):
@@ -55,8 +55,29 @@ def require_fields(payload, names):
     return missing
 
 
+def env_value(env, name, default=""):
+    value = getattr(env, name, None)
+    if value not in (None, ""):
+        return value
+    try:
+        value = env[name]
+        if value not in (None, ""):
+            return value
+    except Exception:
+        pass
+    getter = getattr(env, "get", None)
+    if callable(getter):
+        try:
+            value = getter(name)
+            if value not in (None, ""):
+                return value
+        except Exception:
+            pass
+    return default
+
+
 def local_render_mode(env):
-    return str(getattr(env, "LOCAL_RENDER_MODE", "") or "").strip().lower()
+    return str(env_value(env, "LOCAL_RENDER_MODE", "") or "").strip().lower()
 
 
 def row_to_dict(row):
@@ -74,8 +95,8 @@ def row_to_dict(row):
 
 
 def render_frontpage_html(payload, env):
-    template_url = getattr(env, "PUBLIC_TEMPLATE_URL", "")
-    font_url = getattr(env, "PUBLIC_FONT_URL", "")
+    template_url = env_value(env, "PUBLIC_TEMPLATE_URL", "")
+    font_url = env_value(env, "PUBLIC_FONT_URL", "")
 
     font_face = ""
     if font_url:
@@ -283,9 +304,9 @@ class Default(WorkerEntrypoint):
                 )
                 return with_cors(self.env, response)
 
-            browser_account_id = getattr(self.env, "CLOUDFLARE_ACCOUNT_ID", "")
-            browser_token = getattr(self.env, "BROWSER_RENDERING_API_TOKEN", "")
-            template_url = getattr(self.env, "PUBLIC_TEMPLATE_URL", "")
+            browser_account_id = env_value(self.env, "CLOUDFLARE_ACCOUNT_ID", "")
+            browser_token = env_value(self.env, "BROWSER_RENDERING_API_TOKEN", "")
+            template_url = env_value(self.env, "PUBLIC_TEMPLATE_URL", "")
 
             if not browser_account_id or not browser_token:
                 return with_cors(
