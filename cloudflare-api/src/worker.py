@@ -152,17 +152,24 @@ def render_frontpage_html(payload, env):
       box-sizing: border-box;
     }}
 
+    @page {{
+      size: A4 portrait;
+      margin: 0;
+    }}
+
     html, body {{
       margin: 0;
       padding: 0;
       background: white;
       font-family: "FrontpageSans", Arial, sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }}
 
     .page {{
       position: relative;
-      width: 1414px;
-      height: 2000px;
+      width: 210mm;
+      height: 297mm;
       overflow: hidden;
     }}
 
@@ -170,29 +177,29 @@ def render_frontpage_html(payload, env):
       position: absolute;
       left: 0;
       top: 0;
-      width: 1414px;
-      height: 2000px;
+      width: 210mm;
+      height: 297mm;
     }}
 
     .line {{
       position: absolute;
-      left: 530px;
+      left: 78.75mm;
       color: #000;
-      font-size: 45px;
+      font-size: 18.9pt;
       line-height: 1;
       white-space: nowrap;
     }}
 
-    .line-0 {{ top: 1060px; }}
-    .line-1 {{ top: 1147px; }}
-    .line-2 {{ top: 1234px; }}
-    .line-3 {{ top: 1321px; }}
-    .line-4 {{ top: 1408px; }}
-    .line-5 {{ top: 1495px; }}
-    .line-6 {{ top: 1582px; }}
+    .line-0 {{ top: 157.41mm; }}
+    .line-1 {{ top: 170.33mm; }}
+    .line-2 {{ top: 183.24mm; }}
+    .line-3 {{ top: 196.16mm; }}
+    .line-4 {{ top: 209.08mm; }}
+    .line-5 {{ top: 222.00mm; }}
+    .line-6 {{ top: 234.92mm; }}
 
     .line-6 {{
-      max-width: 760px;
+      max-width: 113mm;
       white-space: normal;
     }}
   </style>
@@ -342,15 +349,13 @@ class Default(WorkerEntrypoint):
                 request_body = {"html": html_document}
                 if wants_pdf:
                     request_body["pdfOptions"] = {
-                        "width": "1414px",
-                        "height": "2000px",
                         "margin": {"top": "0", "right": "0", "bottom": "0", "left": "0"},
                         "printBackground": True,
                     }
                 else:
                     request_body["viewport"] = {
-                        "width": 1414,
-                        "height": 2000,
+                        "width": 794,
+                        "height": 1123,
                         "deviceScaleFactor": 1,
                     }
                     request_body["screenshotOptions"] = {

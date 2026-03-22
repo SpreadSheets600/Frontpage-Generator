@@ -318,6 +318,7 @@
     const streamMap = {};
     const subjectMap = {};
     const semesterMap = {};
+    const allSubjects = [];
 
     apiBaseLabel.textContent = API_BASE;
 
@@ -375,7 +376,10 @@
             name: subject.name,
             code: subject.code,
           };
-          subjectMap[normalized.id] = normalized;
+          if (!subjectMap[normalized.id]) {
+            subjectMap[normalized.id] = normalized;
+            allSubjects.push(normalized);
+          }
           return normalized;
         });
       });
@@ -393,6 +397,7 @@
         (item) => item.label
       );
       populateSelect(streamSelect, "Select Stream", streams, (item) => item.name);
+      populateSelect(subjectSelect, "Select Subject", allSubjects, (item) => `${item.name} (${item.code})`);
     }
 
     async function loadStats() {
@@ -407,7 +412,7 @@
 
     semesterSelect.addEventListener("change", (event) => {
       const selectedSemester = event.target.value;
-      const subjects = catalogMap[selectedSemester] || [];
+      const subjects = allSubjects.length ? allSubjects : (catalogMap[selectedSemester] || []);
       populateSelect(subjectSelect, "Select Subject", subjects, (item) => `${item.name} (${item.code})`);
     });
 
