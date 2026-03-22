@@ -6,7 +6,7 @@ compatibility_flags = ["python_workers"]
 [[d1_databases]]
 binding = "DB"
 database_name = "frontpage-db"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "2bc412e7-b033-4d83-940b-224305a323a2"
 
 [vars]
 ALLOWED_ORIGIN = "https://your-pages-project.pages.dev"

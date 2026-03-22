@@ -304,6 +304,7 @@ dist
 .env*.local
 
 # Local Cloudflare development artifacts
+.wrangler/
 .vscode/
 cloudflare-api/.wrangler/
 cloudflare-api/.dev.vars

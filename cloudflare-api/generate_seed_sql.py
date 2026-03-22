@@ -3,6 +3,7 @@ from pathlib import Path
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
+
 CONFIG_PATH = ROOT_DIR / "admin_config.json"
 OUTPUT_PATH = Path(__file__).resolve().parent / "seed.generated.sql"
 
@@ -34,7 +35,6 @@ def main() -> None:
 
     lines = [
         "-- Generated from admin_config.json",
-        "BEGIN TRANSACTION;",
         "DELETE FROM subject_offerings;",
         "DELETE FROM subjects;",
         "DELETE FROM streams;",
@@ -64,19 +64,13 @@ def main() -> None:
     subject_rows = []
     for idx, subject_name in enumerate(subject_names, start=1):
         code = subject_codes.get(subject_name, "N/A") or "N/A"
-        subject_rows.append(
-            f"  ({idx}, {sql_text(subject_name)}, {sql_text(code)})"
-        )
+        subject_rows.append(f"  ({idx}, {sql_text(subject_name)}, {sql_text(code)})")
     lines.append(",\n".join(subject_rows) + ";")
     lines.append("")
 
     lines.append("INSERT INTO subject_offerings (subject_id, semester_id) VALUES")
-    offering_rows = [
-        f"  ({idx}, 1)" for idx in range(1, len(subject_names) + 1)
-    ]
+    offering_rows = [f"  ({idx}, 1)" for idx in range(1, len(subject_names) + 1)]
     lines.append(",\n".join(offering_rows) + ";")
-    lines.append("")
-    lines.append("COMMIT;")
     lines.append("")
 
     OUTPUT_PATH.write_text("\n".join(lines))
