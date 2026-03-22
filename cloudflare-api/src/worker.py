@@ -111,7 +111,6 @@ async def response_bytes(response):
 
 
 def render_frontpage_html(payload, env):
-    template_url = env_value(env, "PUBLIC_TEMPLATE_URL", "")
     font_url = env_value(env, "PUBLIC_FONT_URL", "")
 
     font_face = ""
@@ -135,9 +134,23 @@ def render_frontpage_html(payload, env):
         subject_name,
     ]
 
+    table_rows = [
+        ("Name", rows[0]),
+        ("Roll No.", rows[1]),
+        ("Registration No.", rows[2]),
+        ("Stream", rows[3]),
+        ("Semester", rows[4]),
+        ("Paper Code", rows[5]),
+        ("Paper Name", rows[6]),
+    ]
     row_markup = "\n".join(
-        f'<div class="line line-{index}">{value}</div>'
-        for index, value in enumerate(rows)
+        f"""
+        <div class="info-row">
+          <div class="label-cell">{label}</div>
+          <div class="value-cell">{value}</div>
+        </div>
+        """
+        for label, value in table_rows
     )
 
     return f"""
@@ -171,43 +184,151 @@ def render_frontpage_html(payload, env):
       width: 210mm;
       height: 297mm;
       overflow: hidden;
+      padding: 6mm;
     }}
 
-    .background {{
+    .sheet {{
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border: 1.2mm solid #2f2f2f;
+      border-radius: 1.2mm;
+      padding: 10mm 8mm 8mm;
+      color: #111;
+      background: #fff;
+    }}
+
+    .header {{
+      text-align: center;
+    }}
+
+    .title {{
+      font-size: 16pt;
+      font-weight: 700;
+      margin: 0;
+    }}
+
+    .subtitle {{
+      margin: 1mm 0 0;
+      font-size: 8.5pt;
+      font-weight: 600;
+    }}
+
+    .affiliation {{
+      margin: 5mm 0 0;
+      font-size: 8.8pt;
+    }}
+
+    .college-code {{
+      margin: 2mm 0 0;
+      font-size: 11pt;
+      font-weight: 700;
+    }}
+
+    .logos {{
+      margin: 12mm auto 0;
+      width: 92mm;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }}
+
+    .logo-box {{
+      width: 38mm;
+      height: 30mm;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 0.4mm solid #d9d9d9;
+      color: #1c1c1c;
+      font-size: 15pt;
+      font-weight: 700;
+      background: #fff;
+    }}
+
+    .report-title {{
+      margin: 16mm 0 10mm;
+      text-align: center;
+      font-size: 15pt;
+      font-weight: 700;
+      text-decoration: underline;
+    }}
+
+    .table {{
+      width: 183mm;
+      margin: 0 auto;
+      border: 0.45mm solid #2f2f2f;
+    }}
+
+    .info-row {{
+      display: grid;
+      grid-template-columns: 31% 69%;
+      min-height: 12.6mm;
+      border-bottom: 0.35mm solid #2f2f2f;
+    }}
+
+    .info-row:last-child {{
+      border-bottom: 0;
+      min-height: 17.5mm;
+    }}
+
+    .label-cell,
+    .value-cell {{
+      display: flex;
+      align-items: center;
+      padding: 0 3mm;
+      font-size: 8.8pt;
+      font-weight: 700;
+    }}
+
+    .label-cell {{
+      border-right: 0.35mm solid #2f2f2f;
+    }}
+
+    .value-cell {{
+      font-weight: 500;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }}
+
+    .footer {{
       position: absolute;
       left: 0;
-      top: 0;
-      width: 210mm;
-      height: 297mm;
-    }}
-
-    .line {{
-      position: absolute;
-      left: 78.75mm;
-      color: #000;
-      font-size: 18.9pt;
-      line-height: 1;
-      white-space: nowrap;
-    }}
-
-    .line-0 {{ top: 157.41mm; }}
-    .line-1 {{ top: 170.33mm; }}
-    .line-2 {{ top: 183.24mm; }}
-    .line-3 {{ top: 196.16mm; }}
-    .line-4 {{ top: 209.08mm; }}
-    .line-5 {{ top: 222.00mm; }}
-    .line-6 {{ top: 234.92mm; }}
-
-    .line-6 {{
-      max-width: 113mm;
-      white-space: normal;
+      right: 0;
+      bottom: 4.5mm;
+      text-align: center;
+      font-size: 7.2pt;
+      color: #333;
+      line-height: 1.25;
     }}
   </style>
 </head>
 <body>
   <div class="page">
-    <img class="background" src="{template_url}" alt="" />
-    {row_markup}
+    <div class="sheet">
+      <div class="header">
+        <h1 class="title">Techno Bengal Institute of Technology</h1>
+        <p class="subtitle">( Formerly known as Bengal Institute of Technology )</p>
+        <p class="affiliation">Affiliated to Maulana Abul KalamAzad University of Technology</p>
+        <p class="college-code">College Code : 121</p>
+      </div>
+
+      <div class="logos">
+        <div class="logo-box">BiT</div>
+        <div class="logo-box">Utech</div>
+      </div>
+
+      <div class="report-title">Lab Report</div>
+
+      <div class="table">
+        {row_markup}
+      </div>
+
+      <div class="footer">
+        Techno Bengal Institute of Technology, Tech Town, on Basanti Highway, No. 1 Govt. Colony,<br />
+        Kolkata-700150, West Bengal, India.
+      </div>
+    </div>
   </div>
 </body>
 </html>
