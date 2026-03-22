@@ -10,5 +10,6 @@ database_id = "2bc412e7-b033-4d83-940b-224305a323a2"
 
 [vars]
 ALLOWED_ORIGIN = "https://frontpage-generator.pages.dev"
+CLOUDFLARE_ACCOUNT_ID = "8e992260cf6309ae6c64734d4a3ca80d"
 PUBLIC_FONT_URL = "https://frontpage-generator.pages.dev/static/Sans.ttf"
 PUBLIC_TEMPLATE_URL = "https://frontpage-generator.pages.dev/static/template.png"
