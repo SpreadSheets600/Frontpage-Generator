@@ -129,7 +129,7 @@
               <p class="text-xs font-mono text-white/50 uppercase tracking-wider">Worker API Base URL</p>
               <p class="mt-2 text-sm text-white/70" id="apiBaseLabel"></p>
               <p class="mt-2 text-xs text-white/40">
-                Change the `API_BASE` constant near the bottom of this file before deploying to Pages.
+                Localhost uses the local Worker automatically. Use `?apiBase=` to override it before deploying to Pages.
               </p>
             </div>
 
@@ -259,7 +259,38 @@
   </div>
 
   <script>
-    const API_BASE = "https://your-worker.your-subdomain.workers.dev";
+    const DEPLOYED_API_BASE = "https://your-worker.your-subdomain.workers.dev";
+
+    function normalizeApiBase(value) {
+      return String(value || "").trim().replace(/\/+$/, "");
+    }
+
+    function isLocalHost(host) {
+      return host === "127.0.0.1" || host === "localhost" || host === "0.0.0.0";
+    }
+
+    function resolveApiBase() {
+      const params = new URLSearchParams(window.location.search);
+      const override = normalizeApiBase(params.get("apiBase"));
+      if (override) {
+        window.localStorage.setItem("frontpage.apiBase", override);
+        return override;
+      }
+
+      const host = window.location.hostname;
+      if (isLocalHost(host)) {
+        return "http://127.0.0.1:8787";
+      }
+
+      const stored = normalizeApiBase(window.localStorage.getItem("frontpage.apiBase"));
+      if (stored) {
+        return stored;
+      }
+
+      return DEPLOYED_API_BASE;
+    }
+
+    const API_BASE = resolveApiBase();
     const semesterSelect = document.getElementById("semesterSelect");
     const streamSelect = document.getElementById("streamSelect");
     const subjectSelect = document.getElementById("subjectSelect");
@@ -368,7 +399,7 @@
       event.preventDefault();
       submitButton.disabled = true;
       submitButton.classList.add("opacity-60", "cursor-not-allowed");
-      setStatus("Generating PDF via Worker API...", "info");
+      setStatus("Generating output via Worker API...", "info");
 
       try {
         const formData = new FormData(event.currentTarget);
@@ -406,8 +437,15 @@
           throw new Error(message || "PDF generation failed.");
         }
 
+        const contentType = response.headers.get("Content-Type") || "";
         const blob = await response.blob();
         const downloadUrl = window.URL.createObjectURL(blob);
+        if (contentType.includes("text/html")) {
+          window.location.assign(downloadUrl);
+          setStatus("Local HTML preview opened.", "success");
+          return;
+        }
+
         const link = document.createElement("a");
         link.href = downloadUrl;
         link.download = `${payload.name}-${payload.subject_name}-FrontPageCover.pdf`.replace(/\s+/g, "-");
