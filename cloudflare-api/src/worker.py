@@ -97,6 +97,19 @@ def row_to_dict(row):
     return {}
 
 
+async def response_bytes(response):
+    array_buffer = getattr(response, "arrayBuffer", None)
+    if callable(array_buffer):
+        return await array_buffer()
+    array_buffer = getattr(response, "array_buffer", None)
+    if callable(array_buffer):
+        return await array_buffer()
+    text_method = getattr(response, "text", None)
+    if callable(text_method):
+        return (await text_method()).encode("utf-8")
+    raise TypeError("Unsupported response body reader")
+
+
 def render_frontpage_html(payload, env):
     template_url = env_value(env, "PUBLIC_TEMPLATE_URL", "")
     font_url = env_value(env, "PUBLIC_FONT_URL", "")
@@ -382,7 +395,7 @@ class Default(WorkerEntrypoint):
                     .run()
                 )
 
-                pdf_bytes = await browser_response.arrayBuffer()
+                pdf_bytes = await response_bytes(browser_response)
                 filename = f"{str(payload['name']).strip()}-{str(payload['subject_name']).strip()}-FrontPageCover.pdf"
                 response = Response(
                     pdf_bytes,
