@@ -214,11 +214,17 @@
                 </select>
               </div>
 
-              <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p class="text-sm font-semibold text-white">PDF delivery</p>
-                <p class="text-xs text-white/50 mt-1">
-                  This form sends JSON to the Worker API and downloads the returned PDF.
-                </p>
+              <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div>
+                  <p class="text-sm font-semibold text-white">Download as PDF</p>
+                  <p class="text-xs text-white/50 mt-1">
+                    Toggle to receive the generated frontpage in PDF format.
+                  </p>
+                </div>
+                <label class="relative inline-flex cursor-pointer items-center">
+                  <input type="checkbox" name="as_pdf" class="sr-only peer" checked />
+                  <div class="w-12 h-6 bg-white/20 rounded-full peer peer-focus:ring-2 peer-focus:ring-electric peer-checked:bg-electric after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:after:translate-x-6"></div>
+                </label>
               </div>
 
               <button
@@ -227,12 +233,22 @@
                 class="group w-full bg-white text-black font-bold py-4 rounded-xl mt-4 hover:bg-electric hover:text-white transition-all duration-300 relative overflow-hidden"
               >
                 <span class="relative z-10 flex items-center justify-center gap-2">
-                  GENERATE PDF
+                  GENERATE DOCUMENT
                   <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
                   </svg>
                 </span>
               </button>
+
+              <a
+                href="/static/index_page.pdf"
+                class="w-full inline-flex items-center justify-center gap-2 bg-transparent border border-white/20 text-white font-semibold py-3 rounded-xl hover:border-electric hover:text-electric transition-colors"
+              >
+                INDEX PAGE
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" />
+                </svg>
+              </a>
             </form>
 
             <div id="statusBox" class="hidden mt-6 rounded-2xl border px-4 py-3 text-sm"></div>
@@ -399,7 +415,7 @@
       event.preventDefault();
       submitButton.disabled = true;
       submitButton.classList.add("opacity-60", "cursor-not-allowed");
-      setStatus("Generating output via Worker API...", "info");
+      setStatus("Generating document via Worker API...", "info");
 
       try {
         const formData = new FormData(event.currentTarget);
@@ -418,6 +434,7 @@
           semester_id: Number(formData.get("semester_id")),
           stream_id: Number(formData.get("stream_id")),
           subject_id: Number(formData.get("subject_id")),
+          as_pdf: formData.get("as_pdf") === "on",
           semester_label: semester.label,
           stream_label: stream.name,
           subject_name: subject.name,
@@ -448,12 +465,13 @@
 
         const link = document.createElement("a");
         link.href = downloadUrl;
-        link.download = `${payload.name}-${payload.subject_name}-FrontPageCover.pdf`.replace(/\s+/g, "-");
+        const extension = payload.as_pdf ? "pdf" : "png";
+        link.download = `${payload.name}-${payload.subject_name}-FrontPageCover.${extension}`.replace(/\s+/g, "-");
         document.body.appendChild(link);
         link.click();
         link.remove();
         window.URL.revokeObjectURL(downloadUrl);
-        setStatus("PDF generated and downloaded.", "success");
+        setStatus(`${payload.as_pdf ? "PDF" : "PNG"} generated and downloaded.`, "success");
       } catch (error) {
         console.error(error);
         setStatus(error.message || "Something went wrong while generating the PDF.", "error");

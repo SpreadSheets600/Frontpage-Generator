@@ -152,61 +152,55 @@ def render_frontpage_html(payload, env):
       box-sizing: border-box;
     }}
 
-    @page {{
-      size: A4 portrait;
-      margin: 0;
-    }}
-
     html, body {{
       margin: 0;
       padding: 0;
-      width: 210mm;
-      height: 297mm;
       background: white;
       font-family: "FrontpageSans", Arial, sans-serif;
     }}
 
     .page {{
       position: relative;
-      width: 210mm;
-      height: 297mm;
+      width: 1414px;
+      height: 2000px;
       overflow: hidden;
     }}
 
     .background {{
       position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+      left: 0;
+      top: 0;
+      width: 1414px;
+      height: 2000px;
     }}
 
-    .overlay {{
+    .line {{
       position: absolute;
-      left: 53mm;
-      top: 106mm;
-      width: 125mm;
+      left: 530px;
       color: #000;
-      font-size: 17pt;
-      line-height: 18.4mm;
-      letter-spacing: 0.01em;
+      font-size: 45px;
+      line-height: 1;
       white-space: nowrap;
     }}
 
+    .line-0 {{ top: 1060px; }}
+    .line-1 {{ top: 1147px; }}
+    .line-2 {{ top: 1234px; }}
+    .line-3 {{ top: 1321px; }}
+    .line-4 {{ top: 1408px; }}
+    .line-5 {{ top: 1495px; }}
+    .line-6 {{ top: 1582px; }}
+
     .line-6 {{
+      max-width: 760px;
       white-space: normal;
-      max-width: 120mm;
-      line-height: 1.15;
-      margin-top: 4mm;
     }}
   </style>
 </head>
 <body>
   <div class="page">
     <img class="background" src="{template_url}" alt="" />
-    <div class="overlay">
-      {row_markup}
-    </div>
+    {row_markup}
   </div>
 </body>
 </html>
@@ -343,14 +337,35 @@ class Default(WorkerEntrypoint):
                         ),
                     )
 
+                wants_pdf = bool(payload.get("as_pdf", True))
+                endpoint = "pdf" if wants_pdf else "screenshot"
+                request_body = {"html": html_document}
+                if wants_pdf:
+                    request_body["pdfOptions"] = {
+                        "width": "1414px",
+                        "height": "2000px",
+                        "margin": {"top": "0", "right": "0", "bottom": "0", "left": "0"},
+                        "printBackground": True,
+                    }
+                else:
+                    request_body["viewport"] = {
+                        "width": 1414,
+                        "height": 2000,
+                        "deviceScaleFactor": 1,
+                    }
+                    request_body["screenshotOptions"] = {
+                        "type": "png",
+                        "fullPage": False,
+                    }
+
                 browser_response = await fetch(
-                    f"https://api.cloudflare.com/client/v4/accounts/{browser_account_id}/browser-rendering/pdf",
+                    f"https://api.cloudflare.com/client/v4/accounts/{browser_account_id}/browser-rendering/{endpoint}",
                     method="POST",
                     headers={
                         "Authorization": f"Bearer {browser_token}",
                         "Content-Type": "application/json",
                     },
-                    body=json.dumps({"html": html_document}),
+                    body=json.dumps(request_body),
                 )
 
                 if not browser_response.ok:
@@ -395,12 +410,15 @@ class Default(WorkerEntrypoint):
                     .run()
                 )
 
-                pdf_bytes = await response_bytes(browser_response)
-                filename = f"{str(payload['name']).strip()}-{str(payload['subject_name']).strip()}-FrontPageCover.pdf"
+                document_bytes = await response_bytes(browser_response)
+                download_ext = "pdf" if wants_pdf else "png"
+                content_type = "application/pdf" if wants_pdf else "image/png"
+                safe_subject = str(payload["subject_name"]).strip().replace(" ", "-")
+                filename = f"{str(payload['name']).strip()}-{safe_subject}-FrontPageCover.{download_ext}"
                 response = Response(
-                    pdf_bytes,
+                    document_bytes,
                     headers={
-                        "Content-Type": "application/pdf",
+                        "Content-Type": content_type,
                         "Content-Disposition": f'attachment; filename="{filename}"',
                     },
                 )
