@@ -1,11 +1,460 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; URL=http://dono-01.danbot.host:7850/frontpages" />
-  <title>Redirecting…</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frontpage Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;500;700&display=swap"
+    rel="stylesheet"
+  />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Space Grotesk"', "sans-serif"],
+            mono: ['"JetBrains Mono"', "monospace"],
+          },
+          colors: {
+            obsidian: "#030305",
+            electric: "#3B82F6",
+            cyber: "#8B5CF6",
+            acid: "#CCFF00",
+          },
+          animation: {
+            float: "float 6s ease-in-out infinite",
+            "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+          },
+          keyframes: {
+            float: {
+              "0%, 100%": { transform: "translateY(0)" },
+              "50%": { transform: "translateY(-20px)" },
+            },
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    body {
+      background-color: #030305;
+      color: #ffffff;
+      overflow-x: hidden;
+    }
+
+    .bg-noise {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+  </style>
 </head>
-<body>
-  <p>Redirecting… If You Are Not Redirected, <a href="http://dono-03.danbot.host:3192/frontpages">click Here</a>.</p>
+<body class="antialiased font-sans selection:bg-electric selection:text-white">
+  <div class="bg-noise"></div>
+
+  <div class="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
+    <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-electric/10 blur-[120px] animate-pulse-slow"></div>
+    <div
+      class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-cyber/10 blur-[120px] animate-pulse-slow"
+      style="animation-delay: 2s"
+    ></div>
+  </div>
+
+  <div class="relative z-10 min-h-screen flex flex-col">
+    <nav class="fixed top-0 w-full z-50 border-b border-white/5 glass">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <a href="/" class="text-lg sm:text-2xl font-bold tracking-tighter flex items-center gap-2">
+          <span class="w-3 h-3 bg-electric rounded-full animate-pulse"></span>
+          FRONTPAGE<span class="text-white/40">GEN</span>
+        </a>
+        <div class="flex items-center gap-4 sm:gap-8 text-xs sm:text-sm font-mono text-white/60">
+          <span class="text-electric">PAGES</span>
+          <span>+</span>
+          <span class="text-cyber">WORKER API</span>
+        </div>
+      </div>
+    </nav>
+
+    <main class="flex-grow pt-28 sm:pt-24 pb-12 px-4 sm:px-6">
+      <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center min-h-[80vh]">
+        <div class="space-y-8 reveal text-center lg:text-left">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-electric/30 bg-electric/10 text-electric font-mono text-xs">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-electric opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-electric"></span>
+            </span>
+            API-DRIVEN DEPLOYMENT
+          </div>
+
+          <h1 class="text-5xl sm:text-6xl md:text-8xl font-bold tracking-tighter leading-[0.9]">
+            GENERATE <br />
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-electric to-cyber">FRONTPAGES</span>
+          </h1>
+
+          <p class="text-lg sm:text-xl text-white/60 font-light max-w-md leading-relaxed mx-auto lg:mx-0">
+            Static Cloudflare Pages frontend. Separate Python Worker API. PDF generation returned directly from the API.
+          </p>
+
+          <div class="flex flex-col sm:flex-row gap-4 pt-4 items-center lg:items-start justify-center lg:justify-start">
+            <div class="flex -space-x-4">
+              <div class="w-12 h-12 rounded-full border-2 border-obsidian bg-white/10 backdrop-blur flex items-center justify-center text-xs font-mono">CF</div>
+              <div class="w-12 h-12 rounded-full border-2 border-obsidian bg-white/10 backdrop-blur flex items-center justify-center text-xs font-mono">PY</div>
+              <div class="w-12 h-12 rounded-full border-2 border-obsidian bg-white/10 backdrop-blur flex items-center justify-center text-xs font-mono">PDF</div>
+            </div>
+            <div class="flex flex-col justify-center text-center sm:text-left">
+              <span class="text-sm font-bold"><span id="docCounter">0</span>+ Generated</span>
+              <span class="text-xs text-white/40 font-mono">Fetched from Worker API</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative reveal" style="transition-delay: 200ms">
+          <div class="glass p-6 md:p-10 rounded-3xl relative overflow-hidden">
+            <div class="mb-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p class="text-xs font-mono text-white/50 uppercase tracking-wider">Worker API Base URL</p>
+              <p class="mt-2 text-sm text-white/70" id="apiBaseLabel"></p>
+              <p class="mt-2 text-xs text-white/40">
+                Change the `API_BASE` constant near the bottom of this file before deploying to Pages.
+              </p>
+            </div>
+
+            <h2 class="text-2xl font-bold mb-8 flex items-center gap-3">
+              <svg class="w-6 h-6 text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              INPUT PARAMETERS
+            </h2>
+
+            <form id="frontpageForm" class="space-y-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                  <label class="text-xs font-mono text-white/50 uppercase tracking-wider">Full Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    required
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all"
+                    placeholder="John Doe"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-xs font-mono text-white/50 uppercase tracking-wider">Roll Number</label>
+                  <input
+                    type="text"
+                    name="roll"
+                    required
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all"
+                    placeholder="123456"
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                  <label class="text-xs font-mono text-white/50 uppercase tracking-wider">Registration No</label>
+                  <input
+                    type="text"
+                    name="reg"
+                    required
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all"
+                    placeholder="A-1234"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-xs font-mono text-white/50 uppercase tracking-wider">Semester</label>
+                  <select
+                    name="semester_id"
+                    id="semesterSelect"
+                    required
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all appearance-none"
+                  >
+                    <option value="" disabled selected>Loading semesters...</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-xs font-mono text-white/50 uppercase tracking-wider">Stream</label>
+                <select
+                  name="stream_id"
+                  id="streamSelect"
+                  required
+                  disabled
+                  class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all appearance-none"
+                >
+                  <option value="" disabled selected>Loading streams...</option>
+                </select>
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-xs font-mono text-white/50 uppercase tracking-wider">Subject</label>
+                <select
+                  name="subject_id"
+                  id="subjectSelect"
+                  required
+                  disabled
+                  class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all appearance-none"
+                >
+                  <option value="" disabled selected>Select Subject</option>
+                </select>
+              </div>
+
+              <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p class="text-sm font-semibold text-white">PDF delivery</p>
+                <p class="text-xs text-white/50 mt-1">
+                  This form sends JSON to the Worker API and downloads the returned PDF.
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                id="submitButton"
+                class="group w-full bg-white text-black font-bold py-4 rounded-xl mt-4 hover:bg-electric hover:text-white transition-all duration-300 relative overflow-hidden"
+              >
+                <span class="relative z-10 flex items-center justify-center gap-2">
+                  GENERATE PDF
+                  <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                  </svg>
+                </span>
+              </button>
+            </form>
+
+            <div id="statusBox" class="hidden mt-6 rounded-2xl border px-4 py-3 text-sm"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="border-t border-white/5 bg-black/20 backdrop-blur-lg mt-auto">
+      <div class="max-w-7xl mx-auto px-6 py-12">
+        <div class="flex flex-col md:flex-row justify-between items-end gap-8">
+          <div>
+            <h3 class="text-4xl font-bold tracking-tighter mb-2">
+              <a href="https://github.com/spreadsheets600/frontpage-generator" class="hover:text-electric transition-colors">GITHUB REPO</a>
+            </h3>
+            <p class="font-mono text-white/40 text-sm">Static frontend prepared for Cloudflare Pages</p>
+          </div>
+          <div class="text-right">
+            <p class="font-mono text-xs text-white/20">BY <a href="https://github.com/spreadsheets600" class="hover:text-cyber transition-colors">SPREADSHEETS600</a></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const API_BASE = "https://your-worker.your-subdomain.workers.dev";
+    const semesterSelect = document.getElementById("semesterSelect");
+    const streamSelect = document.getElementById("streamSelect");
+    const subjectSelect = document.getElementById("subjectSelect");
+    const statusBox = document.getElementById("statusBox");
+    const submitButton = document.getElementById("submitButton");
+    const apiBaseLabel = document.getElementById("apiBaseLabel");
+    const catalogMap = {};
+    const streams = [];
+    const streamMap = {};
+    const subjectMap = {};
+    const semesterMap = {};
+
+    apiBaseLabel.textContent = API_BASE;
+
+    function setStatus(message, tone) {
+      const toneClasses = {
+        success: "border-acid/40 bg-acid/10 text-acid",
+        error: "border-red-400/40 bg-red-400/10 text-red-200",
+        info: "border-electric/40 bg-electric/10 text-electric",
+      };
+      statusBox.className = "mt-6 rounded-2xl border px-4 py-3 text-sm " + (toneClasses[tone] || toneClasses.info);
+      statusBox.textContent = message;
+      statusBox.classList.remove("hidden");
+    }
+
+    function resetSelect(selectEl, placeholder) {
+      selectEl.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
+      selectEl.disabled = true;
+    }
+
+    function populateSelect(selectEl, placeholder, items, formatter) {
+      resetSelect(selectEl, placeholder);
+      if (!items || !items.length) {
+        return;
+      }
+      items.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = item.id;
+        option.textContent = formatter(item);
+        option.className = "bg-obsidian";
+        selectEl.appendChild(option);
+      });
+      selectEl.disabled = false;
+    }
+
+    async function fetchJson(path) {
+      const response = await fetch(`${API_BASE}${path}`);
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || `Request failed for ${path}`);
+      }
+      return response.json();
+    }
+
+    async function loadCatalog() {
+      const data = await fetchJson("/api/catalog");
+      const catalog = data.catalog || [];
+      const catalogStreams = data.streams || [];
+
+      catalog.forEach((entry) => {
+        const semester = entry.semester || {};
+        semesterMap[String(semester.id)] = semester;
+        catalogMap[String(semester.id)] = (entry.subjects || []).map((subject) => {
+          const normalized = {
+            id: String(subject.subject_id),
+            name: subject.name,
+            code: subject.code,
+          };
+          subjectMap[normalized.id] = normalized;
+          return normalized;
+        });
+      });
+
+      catalogStreams.forEach((stream) => {
+        const normalized = { id: String(stream.id), name: stream.name };
+        streams.push(normalized);
+        streamMap[normalized.id] = normalized;
+      });
+
+      populateSelect(
+        semesterSelect,
+        "Select Semester",
+        Object.values(semesterMap),
+        (item) => item.label
+      );
+      populateSelect(streamSelect, "Select Stream", streams, (item) => item.name);
+    }
+
+    async function loadStats() {
+      try {
+        const data = await fetchJson("/api/stats");
+        const count = Number(data.generated_count || 0);
+        document.getElementById("docCounter").textContent = count;
+      } catch (error) {
+        console.error("Failed to fetch stats", error);
+      }
+    }
+
+    semesterSelect.addEventListener("change", (event) => {
+      const selectedSemester = event.target.value;
+      const subjects = catalogMap[selectedSemester] || [];
+      populateSelect(subjectSelect, "Select Subject", subjects, (item) => `${item.name} (${item.code})`);
+    });
+
+    document.getElementById("frontpageForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      submitButton.disabled = true;
+      submitButton.classList.add("opacity-60", "cursor-not-allowed");
+      setStatus("Generating PDF via Worker API...", "info");
+
+      try {
+        const formData = new FormData(event.currentTarget);
+        const semester = semesterMap[String(formData.get("semester_id"))];
+        const stream = streamMap[String(formData.get("stream_id"))];
+        const subject = subjectMap[String(formData.get("subject_id"))];
+
+        if (!semester || !stream || !subject) {
+          throw new Error("Please select a valid semester, stream, and subject.");
+        }
+
+        const payload = {
+          name: String(formData.get("name") || "").trim(),
+          roll: String(formData.get("roll") || "").trim(),
+          reg: String(formData.get("reg") || "").trim(),
+          semester_id: Number(formData.get("semester_id")),
+          stream_id: Number(formData.get("stream_id")),
+          subject_id: Number(formData.get("subject_id")),
+          semester_label: semester.label,
+          stream_label: stream.name,
+          subject_name: subject.name,
+          subject_code: subject.code,
+        };
+
+        const response = await fetch(`${API_BASE}/api/generate-pdf`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || "PDF generation failed.");
+        }
+
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = `${payload.name}-${payload.subject_name}-FrontPageCover.pdf`.replace(/\s+/g, "-");
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(downloadUrl);
+        setStatus("PDF generated and downloaded.", "success");
+      } catch (error) {
+        console.error(error);
+        setStatus(error.message || "Something went wrong while generating the PDF.", "error");
+      } finally {
+        submitButton.disabled = false;
+        submitButton.classList.remove("opacity-60", "cursor-not-allowed");
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("opacity-100", "translate-y-0");
+              entry.target.classList.remove("opacity-0", "translate-y-10");
+            }
+          });
+        },
+        { threshold: 0.1 }
+      );
+
+      document.querySelectorAll(".reveal").forEach((el) => {
+        el.classList.add("transition-all", "duration-1000", "opacity-0", "translate-y-10");
+        observer.observe(el);
+      });
+
+      try {
+        await loadCatalog();
+        await loadStats();
+        setInterval(loadStats, 30000);
+        setStatus("Catalog and stats loaded from Worker API.", "success");
+      } catch (error) {
+        console.error(error);
+        resetSelect(semesterSelect, "Failed to load catalog");
+        resetSelect(streamSelect, "Failed to load streams");
+        setStatus("Could not reach the Worker API. Check the API base URL and CORS settings.", "error");
+      }
+    });
+  </script>
 </body>
 </html>
