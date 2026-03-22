@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
-from workers import Response, WorkerEntrypoint, fetch
+from workers import Response, WorkerEntrypoint, env, fetch
 
 
 def json_response(data, status=200, extra_headers=None):
@@ -73,6 +73,9 @@ def env_value(env, name, default=""):
                 return value
         except Exception:
             pass
+    global_value = getattr(globals().get("env"), name, None)
+    if global_value not in (None, ""):
+        return global_value
     return default
 
 
