@@ -295,102 +295,114 @@ class Default(WorkerEntrypoint):
                     ),
                 )
 
-            html_document = render_frontpage_html(payload, self.env)
-            if local_render_mode(self.env) == "html":
-                filename = f"{str(payload['name']).strip()}-{str(payload['subject_name']).strip()}-FrontPagePreview.html"
-                response = Response(
-                    html_document,
+            try:
+                html_document = render_frontpage_html(payload, self.env)
+                if local_render_mode(self.env) == "html":
+                    filename = f"{str(payload['name']).strip()}-{str(payload['subject_name']).strip()}-FrontPagePreview.html"
+                    response = Response(
+                        html_document,
+                        headers={
+                            "Content-Type": "text/html; charset=utf-8",
+                            "Content-Disposition": f'inline; filename="{filename}"',
+                        },
+                    )
+                    return with_cors(self.env, response)
+
+                browser_account_id = env_value(self.env, "CLOUDFLARE_ACCOUNT_ID", "")
+                browser_token = env_value(self.env, "BROWSER_RENDERING_API_TOKEN", "")
+                template_url = env_value(self.env, "PUBLIC_TEMPLATE_URL", "")
+
+                if not browser_account_id or not browser_token:
+                    return with_cors(
+                        self.env,
+                        json_response(
+                            {"error": "Browser Rendering credentials are not configured."},
+                            status=500,
+                        ),
+                    )
+
+                if not template_url:
+                    return with_cors(
+                        self.env,
+                        json_response(
+                            {"error": "PUBLIC_TEMPLATE_URL is not configured."},
+                            status=500,
+                        ),
+                    )
+
+                browser_response = await fetch(
+                    f"https://api.cloudflare.com/client/v4/accounts/{browser_account_id}/browser-rendering/pdf",
+                    method="POST",
                     headers={
-                        "Content-Type": "text/html; charset=utf-8",
-                        "Content-Disposition": f'inline; filename="{filename}"',
+                        "Authorization": f"Bearer {browser_token}",
+                        "Content-Type": "application/json",
+                    },
+                    body=json.dumps({"html": html_document}),
+                )
+
+                if not browser_response.ok:
+                    error_text = await browser_response.text()
+                    return with_cors(
+                        self.env,
+                        json_response(
+                            {
+                                "error": "Browser Rendering PDF request failed.",
+                                "details": error_text,
+                            },
+                            status=502,
+                        ),
+                    )
+
+                created_at = datetime.now(timezone.utc).isoformat()
+                await (
+                    self.env.DB.prepare(
+                        """
+                    INSERT INTO generation_logs (
+                      created_at,
+                      student_name,
+                      roll,
+                      registration,
+                      subject_name,
+                      subject_code,
+                      stream_label,
+                      semester_label
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """
+                    )
+                    .bind(
+                        created_at,
+                        str(payload["name"]).strip(),
+                        str(payload["roll"]).strip(),
+                        str(payload["reg"]).strip(),
+                        str(payload["subject_name"]).strip(),
+                        str(payload["subject_code"]).strip(),
+                        str(payload["stream_label"]).strip(),
+                        str(payload["semester_label"]).strip(),
+                    )
+                    .run()
+                )
+
+                pdf_bytes = await browser_response.arrayBuffer()
+                filename = f"{str(payload['name']).strip()}-{str(payload['subject_name']).strip()}-FrontPageCover.pdf"
+                response = Response(
+                    pdf_bytes,
+                    headers={
+                        "Content-Type": "application/pdf",
+                        "Content-Disposition": f'attachment; filename="{filename}"',
                     },
                 )
                 return with_cors(self.env, response)
-
-            browser_account_id = env_value(self.env, "CLOUDFLARE_ACCOUNT_ID", "")
-            browser_token = env_value(self.env, "BROWSER_RENDERING_API_TOKEN", "")
-            template_url = env_value(self.env, "PUBLIC_TEMPLATE_URL", "")
-
-            if not browser_account_id or not browser_token:
-                return with_cors(
-                    self.env,
-                    json_response(
-                        {"error": "Browser Rendering credentials are not configured."},
-                        status=500,
-                    ),
-                )
-
-            if not template_url:
-                return with_cors(
-                    self.env,
-                    json_response(
-                        {"error": "PUBLIC_TEMPLATE_URL is not configured."},
-                        status=500,
-                    ),
-                )
-
-            browser_response = await fetch(
-                f"https://api.cloudflare.com/client/v4/accounts/{browser_account_id}/browser-rendering/pdf",
-                method="POST",
-                headers={
-                    "Authorization": f"Bearer {browser_token}",
-                    "Content-Type": "application/json",
-                },
-                body=json.dumps({"html": html_document}),
-            )
-
-            if not browser_response.ok:
-                error_text = await browser_response.text()
+            except Exception as error:
                 return with_cors(
                     self.env,
                     json_response(
                         {
-                            "error": "Browser Rendering PDF request failed.",
-                            "details": error_text,
+                            "error": "PDF generation failed unexpectedly.",
+                            "details": str(error),
                         },
                         status=502,
                     ),
                 )
-
-            created_at = datetime.now(timezone.utc).isoformat()
-            await (
-                self.env.DB.prepare(
-                    """
-                INSERT INTO generation_logs (
-                  created_at,
-                  student_name,
-                  roll,
-                  registration,
-                  subject_name,
-                  subject_code,
-                  stream_label,
-                  semester_label
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """
-                )
-                .bind(
-                    created_at,
-                    str(payload["name"]).strip(),
-                    str(payload["roll"]).strip(),
-                    str(payload["reg"]).strip(),
-                    str(payload["subject_name"]).strip(),
-                    str(payload["subject_code"]).strip(),
-                    str(payload["stream_label"]).strip(),
-                    str(payload["semester_label"]).strip(),
-                )
-                .run()
-            )
-
-            pdf_bytes = await browser_response.arrayBuffer()
-            filename = f"{str(payload['name']).strip()}-{str(payload['subject_name']).strip()}-FrontPageCover.pdf"
-            response = Response(
-                pdf_bytes,
-                headers={
-                    "Content-Type": "application/pdf",
-                    "Content-Disposition": f'attachment; filename="{filename}"',
-                },
-            )
-            return with_cors(self.env, response)
 
         return with_cors(
             self.env,
