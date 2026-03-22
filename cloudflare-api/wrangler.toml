@@ -9,6 +9,6 @@ database_name = "frontpage-db"
 database_id = "2bc412e7-b033-4d83-940b-224305a323a2"
 
 [vars]
-ALLOWED_ORIGIN = "https://your-pages-project.pages.dev"
-PUBLIC_FONT_URL = "https://your-pages-project.pages.dev/static/Sans.ttf"
-PUBLIC_TEMPLATE_URL = "https://your-pages-project.pages.dev/static/template.png"
+ALLOWED_ORIGIN = "https://frontpage-generator.pages.dev"
+PUBLIC_FONT_URL = "https://frontpage-generator.pages.dev/static/Sans.ttf"
+PUBLIC_TEMPLATE_URL = "https://frontpage-generator.pages.dev/static/template.png"
