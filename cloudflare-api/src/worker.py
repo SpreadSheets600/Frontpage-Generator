@@ -26,10 +26,20 @@ def cors_headers(env):
 
 
 def with_cors(env, response):
-    headers = cors_headers(env)
-    for key, value in headers.items():
-        response.headers.set(key, value)
-    return response
+    merged_headers = {}
+    existing_headers = getattr(response, "headers", None)
+    if existing_headers:
+        if hasattr(existing_headers, "entries"):
+            for key, value in existing_headers.entries():
+                merged_headers[str(key)] = str(value)
+        else:
+            merged_headers.update(dict(existing_headers))
+    merged_headers.update(cors_headers(env))
+    return Response(
+        response.body,
+        status=getattr(response, "status", 200),
+        headers=merged_headers,
+    )
 
 
 def path_for(request):
@@ -43,6 +53,24 @@ def sanitize_text(value):
 def require_fields(payload, names):
     missing = [name for name in names if not str(payload.get(name, "")).strip()]
     return missing
+
+
+def local_render_mode(env):
+    return str(getattr(env, "LOCAL_RENDER_MODE", "") or "").strip().lower()
+
+
+def row_to_dict(row):
+    if row is None:
+        return {}
+    if isinstance(row, dict):
+        return row
+    if hasattr(row, "to_py"):
+        converted = row.to_py()
+        if isinstance(converted, dict):
+            return converted
+    if hasattr(row, "object_entries"):
+        return dict(row.object_entries())
+    return {}
 
 
 def render_frontpage_html(payload, env):
@@ -71,7 +99,8 @@ def render_frontpage_html(payload, env):
     ]
 
     row_markup = "\n".join(
-        f'<div class="line line-{index}">{value}</div>' for index, value in enumerate(rows)
+        f'<div class="line line-{index}">{value}</div>'
+        for index, value in enumerate(rows)
     )
 
     return f"""
@@ -162,7 +191,8 @@ class Default(WorkerEntrypoint):
             row = await self.env.DB.prepare(
                 "SELECT COUNT(*) AS count FROM generation_logs"
             ).first()
-            count = row["count"] if row and "count" in row else 0
+            row_data = row_to_dict(row)
+            count = row_data.get("count", 0) or 0
             return with_cors(self.env, json_response({"generated_count": count}))
 
         if path == "/api/catalog" and method == "GET":
@@ -186,9 +216,9 @@ class Default(WorkerEntrypoint):
                 """
             ).all()
 
-            semesters = semesters_result.results or []
-            streams = streams_result.results or []
-            offerings = offerings_result.results or []
+            semesters = [row_to_dict(row) for row in (semesters_result.results or [])]
+            streams = [row_to_dict(row) for row in (streams_result.results or [])]
+            offerings = [row_to_dict(row) for row in (offerings_result.results or [])]
 
             catalog = []
             for semester in semesters:
@@ -241,6 +271,18 @@ class Default(WorkerEntrypoint):
                     ),
                 )
 
+            html_document = render_frontpage_html(payload, self.env)
+            if local_render_mode(self.env) == "html":
+                filename = f"{str(payload['name']).strip()}-{str(payload['subject_name']).strip()}-FrontPagePreview.html"
+                response = Response(
+                    html_document,
+                    headers={
+                        "Content-Type": "text/html; charset=utf-8",
+                        "Content-Disposition": f'inline; filename="{filename}"',
+                    },
+                )
+                return with_cors(self.env, response)
+
             browser_account_id = getattr(self.env, "CLOUDFLARE_ACCOUNT_ID", "")
             browser_token = getattr(self.env, "BROWSER_RENDERING_API_TOKEN", "")
             template_url = getattr(self.env, "PUBLIC_TEMPLATE_URL", "")
@@ -249,9 +291,7 @@ class Default(WorkerEntrypoint):
                 return with_cors(
                     self.env,
                     json_response(
-                        {
-                            "error": "Browser Rendering credentials are not configured."
-                        },
+                        {"error": "Browser Rendering credentials are not configured."},
                         status=500,
                     ),
                 )
@@ -265,7 +305,6 @@ class Default(WorkerEntrypoint):
                     ),
                 )
 
-            html_document = render_frontpage_html(payload, self.env)
             browser_response = await fetch(
                 f"https://api.cloudflare.com/client/v4/accounts/{browser_account_id}/browser-rendering/pdf",
                 method="POST",
@@ -290,8 +329,9 @@ class Default(WorkerEntrypoint):
                 )
 
             created_at = datetime.now(timezone.utc).isoformat()
-            await self.env.DB.prepare(
-                """
+            await (
+                self.env.DB.prepare(
+                    """
                 INSERT INTO generation_logs (
                   created_at,
                   student_name,
@@ -303,19 +343,22 @@ class Default(WorkerEntrypoint):
                   semester_label
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """
-            ).bind(
-                created_at,
-                str(payload["name"]).strip(),
-                str(payload["roll"]).strip(),
-                str(payload["reg"]).strip(),
-                str(payload["subject_name"]).strip(),
-                str(payload["subject_code"]).strip(),
-                str(payload["stream_label"]).strip(),
-                str(payload["semester_label"]).strip(),
-            ).run()
+                )
+                .bind(
+                    created_at,
+                    str(payload["name"]).strip(),
+                    str(payload["roll"]).strip(),
+                    str(payload["reg"]).strip(),
+                    str(payload["subject_name"]).strip(),
+                    str(payload["subject_code"]).strip(),
+                    str(payload["stream_label"]).strip(),
+                    str(payload["semester_label"]).strip(),
+                )
+                .run()
+            )
 
             pdf_bytes = await browser_response.arrayBuffer()
-            filename = f'{str(payload["name"]).strip()}-{str(payload["subject_name"]).strip()}-FrontPageCover.pdf'
+            filename = f"{str(payload['name']).strip()}-{str(payload['subject_name']).strip()}-FrontPageCover.pdf"
             response = Response(
                 pdf_bytes,
                 headers={

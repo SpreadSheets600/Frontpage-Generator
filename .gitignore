@@ -302,3 +302,9 @@ dist
 # End of https://www.toptal.com/developers/gitignore/api/flask,node
 .vercel
 .env*.local
+
+# Local Cloudflare development artifacts
+.vscode/
+cloudflare-api/.wrangler/
+cloudflare-api/.dev.vars
+cloudflare-api/seed.generated.sql

@@ -1,6 +1,7 @@
 name = "frontpage-api"
 main = "src/worker.py"
 compatibility_date = "2026-03-21"
+compatibility_flags = ["python_workers"]
 
 [[d1_databases]]
 binding = "DB"
@@ -9,5 +10,5 @@ database_id = "REPLACE_WITH_D1_DATABASE_ID"
 
 [vars]
 ALLOWED_ORIGIN = "https://your-pages-project.pages.dev"
-PUBLIC_TEMPLATE_URL = "https://your-pages-project.pages.dev/static/template.png"
 PUBLIC_FONT_URL = "https://your-pages-project.pages.dev/static/Sans.ttf"
+PUBLIC_TEMPLATE_URL = "https://your-pages-project.pages.dev/static/template.png"

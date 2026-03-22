@@ -1,4 +1,9 @@
 {
+  "scripts": {
+    "cf:dev": "cd cloudflare-api && npx wrangler@latest dev",
+    "cf:d1:init": "python3 cloudflare-api/generate_seed_sql.py && cd cloudflare-api && npx wrangler@latest d1 execute frontpage-db --local --file=./schema.sql && npx wrangler@latest d1 execute frontpage-db --local --file=./seed.generated.sql",
+    "frontend:dev": "python3 -m http.server 3000"
+  },
   "dependencies": {
     "vercel": "^48.12.0"
   }
