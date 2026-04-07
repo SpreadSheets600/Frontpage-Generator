@@ -1,9 +1,9 @@
 import html
 import json
 from datetime import datetime, timezone
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
-from workers import Response, WorkerEntrypoint, env, fetch
+from workers import Response, WorkerEntrypoint, fetch
 
 
 def json_response(data, status=200, extra_headers=None):
@@ -44,6 +44,11 @@ def with_cors(env, response):
 
 def path_for(request):
     return urlparse(request.url).path.rstrip("/") or "/"
+
+
+def query_params(request):
+    parsed = urlparse(request.url)
+    return parse_qs(parsed.query or "")
 
 
 def sanitize_text(value):
@@ -116,6 +121,49 @@ def normalized_bool(value, default=True):
     if isinstance(value, bool):
         return value
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def request_header_value(request, name):
+    headers = getattr(request, "headers", None)
+    if not headers:
+        return ""
+    getter = getattr(headers, "get", None)
+    if callable(getter):
+        value = getter(name)
+        if value not in (None, ""):
+            return str(value)
+    try:
+        value = headers[name]
+        if value not in (None, ""):
+            return str(value)
+    except Exception:
+        pass
+    return ""
+
+
+def admin_key_from_request(request):
+    header_value = request_header_value(request, "X-Admin-Key")
+    if header_value:
+        return header_value.strip()
+    params = query_params(request)
+    query_value = (params.get("admin_key") or [""])[0]
+    return str(query_value).strip()
+
+
+def is_admin_authorized(worker_env, request):
+    expected = str(env_value(worker_env, "ADMIN_API_KEY", "") or "").strip()
+    if not expected:
+        return False, "Admin API key not configured"
+    if admin_key_from_request(request) != expected:
+        return False, "Invalid admin credentials"
+    return True, ""
+
+
+def parse_int(value, default=None):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 
 async def log_generation(env, payload):
@@ -621,6 +669,374 @@ class Default(WorkerEntrypoint):
                         status=500,
                     ),
                 )
+
+        if path == "/admin/subjects":
+            allowed, reason = is_admin_authorized(self.env, request)
+            if not allowed:
+                return with_cors(self.env, json_response({"error": reason}, status=401))
+
+            if method == "GET":
+                semesters_result = await self.env.DB.prepare(
+                    "SELECT id, label, order_index FROM semesters ORDER BY order_index"
+                ).all()
+                streams_result = await self.env.DB.prepare(
+                    "SELECT id, name, short_code FROM streams ORDER BY name"
+                ).all()
+                offerings_result = await self.env.DB.prepare(
+                    """
+                    SELECT
+                      off.id AS offering_id,
+                      off.semester_id AS semester_id,
+                      sub.id AS subject_id,
+                      sub.name AS subject_name,
+                      sub.code AS subject_code
+                    FROM subject_offerings off
+                    JOIN subjects sub ON sub.id = off.subject_id
+                    ORDER BY off.semester_id, sub.name
+                    """
+                ).all()
+
+                semesters = [row_to_dict(row) for row in (semesters_result.results or [])]
+                streams = [row_to_dict(row) for row in (streams_result.results or [])]
+                offerings = [row_to_dict(row) for row in (offerings_result.results or [])]
+
+                catalog = []
+                for semester in semesters:
+                    semester_id = semester["id"]
+                    semester_subjects = []
+                    for offering in offerings:
+                        if offering["semester_id"] != semester_id:
+                            continue
+                        semester_subjects.append(
+                            {
+                                "offering_id": offering["offering_id"],
+                                "subject_id": offering["subject_id"],
+                                "name": offering["subject_name"],
+                                "code": offering["subject_code"],
+                            }
+                        )
+                    catalog.append(
+                        {
+                            "semester": {"id": semester_id, "label": semester["label"]},
+                            "subjects": semester_subjects,
+                        }
+                    )
+
+                return with_cors(
+                    self.env,
+                    json_response(
+                        {
+                            "catalog": catalog,
+                            "streams": streams,
+                            "semesters": [
+                                {"id": sem["id"], "label": sem["label"]}
+                                for sem in semesters
+                            ],
+                        }
+                    ),
+                )
+
+            if method in {"POST", "PUT", "DELETE"}:
+                payload = await request.json()
+
+            if method == "POST":
+                subject_name = str(payload.get("name", "") or "").strip()
+                code = str(payload.get("code", "N/A") or "N/A").strip() or "N/A"
+                semester_id = parse_int(payload.get("semester_id"))
+
+                if not subject_name:
+                    return with_cors(
+                        self.env,
+                        json_response({"error": "Subject name is required"}, status=400),
+                    )
+                if not semester_id:
+                    return with_cors(
+                        self.env,
+                        json_response({"error": "semester_id is required"}, status=400),
+                    )
+
+                subject_row = await self.env.DB.prepare(
+                    "SELECT id FROM subjects WHERE lower(name) = lower(?)"
+                ).bind(subject_name).first()
+                subject = row_to_dict(subject_row)
+                subject_id = subject.get("id")
+
+                if subject_id:
+                    await (
+                        self.env.DB.prepare(
+                            "UPDATE subjects SET name = ?, code = ? WHERE id = ?"
+                        )
+                        .bind(subject_name, code, subject_id)
+                        .run()
+                    )
+                else:
+                    await (
+                        self.env.DB.prepare("INSERT INTO subjects (name, code) VALUES (?, ?)")
+                        .bind(subject_name, code)
+                        .run()
+                    )
+                    created_row = await self.env.DB.prepare(
+                        "SELECT id FROM subjects WHERE lower(name) = lower(?)"
+                    ).bind(subject_name).first()
+                    subject_id = row_to_dict(created_row).get("id")
+
+                offering_row = await self.env.DB.prepare(
+                    "SELECT id FROM subject_offerings WHERE subject_id = ? AND semester_id = ?"
+                ).bind(subject_id, semester_id).first()
+                offering = row_to_dict(offering_row)
+
+                if offering.get("id"):
+                    offering_id = offering["id"]
+                else:
+                    await (
+                        self.env.DB.prepare(
+                            "INSERT INTO subject_offerings (subject_id, semester_id) VALUES (?, ?)"
+                        )
+                        .bind(subject_id, semester_id)
+                        .run()
+                    )
+                    offering_created = await self.env.DB.prepare(
+                        "SELECT id FROM subject_offerings WHERE subject_id = ? AND semester_id = ?"
+                    ).bind(subject_id, semester_id).first()
+                    offering_id = row_to_dict(offering_created).get("id")
+
+                return with_cors(
+                    self.env,
+                    json_response(
+                        {"message": "Subject saved", "offering_id": offering_id},
+                        status=201,
+                    ),
+                )
+
+            if method == "PUT":
+                offering_id = parse_int(payload.get("offering_id"))
+                subject_name = str(payload.get("name", "") or "").strip()
+                code = str(payload.get("code", "N/A") or "N/A").strip() or "N/A"
+                semester_id = parse_int(payload.get("semester_id"))
+
+                if not offering_id:
+                    return with_cors(
+                        self.env,
+                        json_response({"error": "offering_id is required"}, status=400),
+                    )
+                if not subject_name:
+                    return with_cors(
+                        self.env,
+                        json_response({"error": "Subject name is required"}, status=400),
+                    )
+                if not semester_id:
+                    return with_cors(
+                        self.env,
+                        json_response({"error": "semester_id is required"}, status=400),
+                    )
+
+                current_row = await self.env.DB.prepare(
+                    """
+                    SELECT off.id AS offering_id, off.subject_id AS subject_id
+                    FROM subject_offerings off
+                    WHERE off.id = ?
+                    """
+                ).bind(offering_id).first()
+                current = row_to_dict(current_row)
+                if not current:
+                    return with_cors(
+                        self.env,
+                        json_response({"error": "Subject offering not found"}, status=404),
+                    )
+
+                duplicate_row = await self.env.DB.prepare(
+                    "SELECT id FROM subjects WHERE lower(name) = lower(?) AND id != ?"
+                ).bind(subject_name, current["subject_id"]).first()
+                if row_to_dict(duplicate_row):
+                    return with_cors(
+                        self.env,
+                        json_response(
+                            {"error": "Another subject with that name exists"},
+                            status=400,
+                        ),
+                    )
+
+                try:
+                    await (
+                        self.env.DB.prepare(
+                            "UPDATE subjects SET name = ?, code = ? WHERE id = ?"
+                        )
+                        .bind(subject_name, code, current["subject_id"])
+                        .run()
+                    )
+                    await (
+                        self.env.DB.prepare(
+                            "UPDATE subject_offerings SET semester_id = ? WHERE id = ?"
+                        )
+                        .bind(semester_id, offering_id)
+                        .run()
+                    )
+                except Exception as error:
+                    return with_cors(
+                        self.env,
+                        json_response(
+                            {
+                                "error": "Could not update subject offering",
+                                "details": str(error),
+                            },
+                            status=400,
+                        ),
+                    )
+
+                return with_cors(
+                    self.env,
+                    json_response({"message": "Subject updated"}),
+                )
+
+            if method == "DELETE":
+                offering_id = parse_int(payload.get("offering_id"))
+                if not offering_id:
+                    return with_cors(
+                        self.env,
+                        json_response({"error": "offering_id is required"}, status=400),
+                    )
+
+                offering_row = await self.env.DB.prepare(
+                    "SELECT id, subject_id FROM subject_offerings WHERE id = ?"
+                ).bind(offering_id).first()
+                offering = row_to_dict(offering_row)
+                if not offering:
+                    return with_cors(
+                        self.env,
+                        json_response({"error": "Subject offering not found"}, status=404),
+                    )
+
+                await (
+                    self.env.DB.prepare("DELETE FROM subject_offerings WHERE id = ?")
+                    .bind(offering_id)
+                    .run()
+                )
+                left_row = await self.env.DB.prepare(
+                    "SELECT COUNT(*) AS count FROM subject_offerings WHERE subject_id = ?"
+                ).bind(offering["subject_id"]).first()
+                left_count = parse_int(row_to_dict(left_row).get("count"), default=0) or 0
+                if left_count == 0:
+                    await (
+                        self.env.DB.prepare("DELETE FROM subjects WHERE id = ?")
+                        .bind(offering["subject_id"])
+                        .run()
+                    )
+
+                return with_cors(
+                    self.env,
+                    json_response({"message": "Subject removed"}),
+                )
+
+            return with_cors(
+                self.env,
+                json_response({"error": "Method not allowed"}, status=405),
+            )
+
+        if path == "/admin/streams":
+            allowed, reason = is_admin_authorized(self.env, request)
+            if not allowed:
+                return with_cors(self.env, json_response({"error": reason}, status=401))
+
+            if method in {"POST", "DELETE"}:
+                payload = await request.json()
+
+            if method == "POST":
+                name = str(payload.get("label") or payload.get("name") or "").strip()
+                if not name:
+                    return with_cors(
+                        self.env,
+                        json_response({"error": "label is required"}, status=400),
+                    )
+                short_code = (
+                    str(payload.get("short_code") or name)
+                    .strip()
+                    .upper()
+                    .replace(" ", "_")
+                )
+
+                try:
+                    await (
+                        self.env.DB.prepare(
+                            "INSERT INTO streams (name, short_code) VALUES (?, ?)"
+                        )
+                        .bind(name, short_code)
+                        .run()
+                    )
+                except Exception as error:
+                    return with_cors(
+                        self.env,
+                        json_response(
+                            {
+                                "error": "Could not create stream",
+                                "details": str(error),
+                            },
+                            status=400,
+                        ),
+                    )
+
+                created = await self.env.DB.prepare(
+                    "SELECT id FROM streams WHERE lower(name) = lower(?)"
+                ).bind(name).first()
+                return with_cors(
+                    self.env,
+                    json_response(
+                        {
+                            "message": "Stream created",
+                            "id": row_to_dict(created).get("id"),
+                        },
+                        status=201,
+                    ),
+                )
+
+            if method == "DELETE":
+                stream_id = parse_int(payload.get("id"))
+                if not stream_id:
+                    return with_cors(
+                        self.env,
+                        json_response({"error": "id is required"}, status=400),
+                    )
+                await (
+                    self.env.DB.prepare("DELETE FROM streams WHERE id = ?")
+                    .bind(stream_id)
+                    .run()
+                )
+                return with_cors(
+                    self.env,
+                    json_response({"message": "Stream removed"}),
+                )
+
+            return with_cors(
+                self.env,
+                json_response({"error": "Method not allowed"}, status=405),
+            )
+
+        if path == "/admin/logs" and method == "GET":
+            allowed, reason = is_admin_authorized(self.env, request)
+            if not allowed:
+                return with_cors(self.env, json_response({"error": reason}, status=401))
+
+            params = query_params(request)
+            limit = parse_int((params.get("limit") or [50])[0], default=50) or 50
+            limit = max(1, min(200, limit))
+
+            logs_result = await self.env.DB.prepare(
+                """
+                SELECT
+                  created_at AS timestamp,
+                  student_name AS name,
+                  roll,
+                  registration AS reg,
+                  subject_name AS subject,
+                  stream_label AS stream,
+                  semester_label AS semester,
+                  subject_code AS code
+                FROM generation_logs
+                ORDER BY created_at DESC
+                LIMIT ?
+                """
+            ).bind(limit).all()
+            logs = [row_to_dict(row) for row in (logs_result.results or [])]
+            return with_cors(self.env, json_response({"logs": logs}))
 
         return with_cors(
             self.env,
