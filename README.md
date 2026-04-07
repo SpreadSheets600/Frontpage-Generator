@@ -1,14 +1,14 @@
 # Frontpage Generator
 
-A web application for generating academic frontpage covers automatically. Built with Flask, featuring a modern UI and an admin dashboard for managing subjects and streams.
+A web application for generating academic frontpage covers automatically. The project is D1-first: catalog, streams, and logs are served from Cloudflare D1 through the Python Worker API.
 
 ## Features
 
 - Generate frontpage covers with user input (name, roll, registration, subject, stream, semester)
-- Admin dashboard for managing subjects, streams, and viewing logs
+- Admin dashboard for managing subjects, streams, and viewing logs (all persisted in D1)
 - Responsive design optimized for mobile and desktop
 - Live counter showing total documents generated
-- JSON-based configuration for easy management
+- Cloudflare D1-backed catalog and logging APIs
 
 ## Installation
 
@@ -102,6 +102,7 @@ This repository now also includes a Cloudflare-oriented path:
 ### What the Worker does
 
 - reads catalog and stats from D1
+- provides admin endpoints for subjects, streams, and logs backed by D1
 - accepts normal-user form input as JSON
 - logs successful client-side generations into D1
 - still exposes the Browser Rendering-backed `/api/generate-pdf` route for compatibility, but the Pages frontend now renders the PDF or PNG locally from `static/template.png` to avoid Browser Rendering rate limits
@@ -128,7 +129,7 @@ Use this flow if you want to verify the Worker from your machine before pushing 
 
 1. Copy [cloudflare-api/.dev.vars.example](/home/spreadsheets600/Development/Frontpage-Generator/cloudflare-api/.dev.vars.example) to `cloudflare-api/.dev.vars` and fill in your Cloudflare account ID and Browser Rendering token.
 2. In [cloudflare-api/wrangler.toml](/home/spreadsheets600/Development/Frontpage-Generator/cloudflare-api/wrangler.toml), temporarily set `ALLOWED_ORIGIN` to `http://127.0.0.1:3000`. If you want HTML preview mode instead of real PDF generation, also set `LOCAL_RENDER_MODE = "html"` and point `PUBLIC_TEMPLATE_URL` and `PUBLIC_FONT_URL` at your local static server.
-3. Initialize a local D1 database from [admin_config.json](/home/spreadsheets600/Development/Frontpage-Generator/admin_config.json):
+3. Initialize a local D1 database from schema + seed SQL:
 
    ```
    npm run cf:d1:init
@@ -169,7 +170,7 @@ curl -X POST http://127.0.0.1:8787/api/generate-pdf \
   }'
 ```
 
-The D1 seed is generated from `admin_config.json`, so the local Worker catalog uses the same subject and stream data as the Flask app. Subjects are currently attached to the `1st` semester because `admin_config.json` does not include semester mappings.
+The D1 seed is loaded from `cloudflare-api/seed.generated.sql`. If you want to regenerate that file, use `cloudflare-api/generate_seed_sql.py` manually.
 
 Without `LOCAL_RENDER_MODE = "html"`, the legacy PDF route uses Cloudflare Browser Rendering and requires valid Cloudflare credentials plus a publicly reachable template asset URL. The current Pages frontend does not depend on that route for normal downloads.
 
@@ -186,7 +187,6 @@ Without `LOCAL_RENDER_MODE = "html"`, the legacy PDF route uses Cloudflare Brows
 3. Apply schema and seed data to the remote D1 database:
 
    ```
-   python3 cloudflare-api/generate_seed_sql.py
    cd cloudflare-api
    npx wrangler d1 execute frontpage-db --remote --file=./schema.sql
    npx wrangler d1 execute frontpage-db --remote --file=./seed.generated.sql
@@ -215,18 +215,18 @@ Without `LOCAL_RENDER_MODE = "html"`, the legacy PDF route uses Cloudflare Brows
 
 ## Project Structure
 
-This repository currently ships two runnable paths that share the same academic catalog data:
+This repository currently ships two runnable paths that share the same Cloudflare D1-backed catalog:
 
 - `index.html`: standalone static generator page for Cloudflare Pages. It renders PNG/PDF locally in the browser from `static/template.png` and logs usage through the Worker API.
 - `static/`: assets used by the static frontend and the Flask app, including `template.png`, `Sans.ttf`, and the downloadable `index_page.pdf`.
 - `cloudflare-api/src/worker.py`: Cloudflare Python Worker. It serves `/api/catalog`, `/api/stats`, `/api/generate-pdf`, and `/api/log-generation`.
 - `cloudflare-api/wrangler.toml`: Worker deployment config, D1 binding, and public asset origin settings for Pages.
 - `cloudflare-api/schema.sql`: D1 schema for semesters, streams, subjects, and generation logs.
-- `cloudflare-api/generate_seed_sql.py`: generates D1 seed SQL from `admin_config.json`.
-- `main.py`: original Flask app for local/server deployment. It still renders the same frontpage template and provides the admin dashboard flow.
+- `cloudflare-api/generate_seed_sql.py`: optional helper to regenerate D1 seed SQL from a local catalog file.
+- `main.py`: Flask host/proxy for local/server deployment. It serves UI files and forwards API calls to the Worker, so data still comes from D1.
 - `templates/`: Flask templates for the legacy app UI and admin pages.
-- `admin_config.json`: source-of-truth catalog data used by both the Flask app and the D1 seed generator.
-- `frontpage_logs.jsonl`: local append-only generation log used by the Flask path.
+- `admin_config.json`: optional local file used only if you manually regenerate D1 seed SQL.
+- `frontpage_logs.jsonl`: legacy local log artifact; runtime logging is stored in D1.
 - `requirements.txt`, `pyproject.toml`: Python dependency definitions for the Flask app and local tooling.
 - `package.json`: helper scripts for local Cloudflare Worker development and local static frontend serving.
 
