@@ -448,49 +448,17 @@ class Default(WorkerEntrypoint):
             streams_result = await self.env.DB.prepare(
                 "SELECT id, name, short_code FROM streams ORDER BY name"
             ).all()
-            offerings_result = await self.env.DB.prepare(
-                """
-                SELECT
-                  off.id AS offering_id,
-                  off.semester_id AS semester_id,
-                  sub.id AS subject_id,
-                  sub.name AS subject_name,
-                  sub.code AS subject_code
-                FROM subject_offerings off
-                JOIN subjects sub ON sub.id = off.subject_id
-                ORDER BY off.semester_id, sub.name
-                """
+            subjects_result = await self.env.DB.prepare(
+                "SELECT id, name, code FROM subjects ORDER BY name"
             ).all()
 
             semesters = [row_to_dict(row) for row in (semesters_result.results or [])]
             streams = [row_to_dict(row) for row in (streams_result.results or [])]
-            offerings = [row_to_dict(row) for row in (offerings_result.results or [])]
-
-            catalog = []
-            for semester in semesters:
-                semester_id = semester["id"]
-                semester_subjects = []
-                for offering in offerings:
-                    if offering["semester_id"] != semester_id:
-                        continue
-                    semester_subjects.append(
-                        {
-                            "offering_id": offering["offering_id"],
-                            "subject_id": offering["subject_id"],
-                            "name": offering["subject_name"],
-                            "code": offering["subject_code"],
-                        }
-                    )
-                catalog.append(
-                    {
-                        "semester": {"id": semester_id, "label": semester["label"]},
-                        "subjects": semester_subjects,
-                    }
-                )
+            subjects = [row_to_dict(row) for row in (subjects_result.results or [])]
 
             return with_cors(
                 self.env,
-                json_response({"catalog": catalog, "streams": streams}),
+                json_response({"semesters": semesters, "streams": streams, "subjects": subjects}),
             )
 
         if path == "/api/generate-pdf" and method == "POST":
@@ -682,56 +650,21 @@ class Default(WorkerEntrypoint):
                 streams_result = await self.env.DB.prepare(
                     "SELECT id, name, short_code FROM streams ORDER BY name"
                 ).all()
-                offerings_result = await self.env.DB.prepare(
-                    """
-                    SELECT
-                      off.id AS offering_id,
-                      off.semester_id AS semester_id,
-                      sub.id AS subject_id,
-                      sub.name AS subject_name,
-                      sub.code AS subject_code
-                    FROM subject_offerings off
-                    JOIN subjects sub ON sub.id = off.subject_id
-                    ORDER BY off.semester_id, sub.name
-                    """
+                subjects_result = await self.env.DB.prepare(
+                    "SELECT id, name, code FROM subjects ORDER BY name"
                 ).all()
 
                 semesters = [row_to_dict(row) for row in (semesters_result.results or [])]
                 streams = [row_to_dict(row) for row in (streams_result.results or [])]
-                offerings = [row_to_dict(row) for row in (offerings_result.results or [])]
-
-                catalog = []
-                for semester in semesters:
-                    semester_id = semester["id"]
-                    semester_subjects = []
-                    for offering in offerings:
-                        if offering["semester_id"] != semester_id:
-                            continue
-                        semester_subjects.append(
-                            {
-                                "offering_id": offering["offering_id"],
-                                "subject_id": offering["subject_id"],
-                                "name": offering["subject_name"],
-                                "code": offering["subject_code"],
-                            }
-                        )
-                    catalog.append(
-                        {
-                            "semester": {"id": semester_id, "label": semester["label"]},
-                            "subjects": semester_subjects,
-                        }
-                    )
+                subjects = [row_to_dict(row) for row in (subjects_result.results or [])]
 
                 return with_cors(
                     self.env,
                     json_response(
                         {
-                            "catalog": catalog,
+                            "semesters": semesters,
                             "streams": streams,
-                            "semesters": [
-                                {"id": sem["id"], "label": sem["label"]}
-                                for sem in semesters
-                            ],
+                            "subjects": subjects,
                         }
                     ),
                 )

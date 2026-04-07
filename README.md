@@ -129,7 +129,7 @@ Use this flow if you want to verify the Worker from your machine before pushing 
 
 1. Copy [cloudflare-api/.dev.vars.example](/home/spreadsheets600/Development/Frontpage-Generator/cloudflare-api/.dev.vars.example) to `cloudflare-api/.dev.vars` and fill in your Cloudflare account ID and Browser Rendering token.
 2. In [cloudflare-api/wrangler.toml](/home/spreadsheets600/Development/Frontpage-Generator/cloudflare-api/wrangler.toml), temporarily set `ALLOWED_ORIGIN` to `http://127.0.0.1:3000`. If you want HTML preview mode instead of real PDF generation, also set `LOCAL_RENDER_MODE = "html"` and point `PUBLIC_TEMPLATE_URL` and `PUBLIC_FONT_URL` at your local static server.
-3. Initialize a local D1 database from schema + seed SQL:
+3. Initialize a local D1 database from schema:
 
    ```
    npm run cf:d1:init
@@ -170,7 +170,7 @@ curl -X POST http://127.0.0.1:8787/api/generate-pdf \
   }'
 ```
 
-The D1 seed is loaded from `cloudflare-api/seed.generated.sql`. If you want to regenerate that file, use `cloudflare-api/generate_seed_sql.py` manually.
+The D1 database starts with the schema only. Use the admin dashboard to add subjects and streams, or seed D1 manually with your own SQL.
 
 Without `LOCAL_RENDER_MODE = "html"`, the legacy PDF route uses Cloudflare Browser Rendering and requires valid Cloudflare credentials plus a publicly reachable template asset URL. The current Pages frontend does not depend on that route for normal downloads.
 
@@ -189,7 +189,6 @@ Without `LOCAL_RENDER_MODE = "html"`, the legacy PDF route uses Cloudflare Brows
    ```
    cd cloudflare-api
    npx wrangler d1 execute frontpage-db --remote --file=./schema.sql
-   npx wrangler d1 execute frontpage-db --remote --file=./seed.generated.sql
    ```
 
 4. Set Worker secrets:
@@ -222,11 +221,8 @@ This repository currently ships two runnable paths that share the same Cloudflar
 - `cloudflare-api/src/worker.py`: Cloudflare Python Worker. It serves `/api/catalog`, `/api/stats`, `/api/generate-pdf`, and `/api/log-generation`.
 - `cloudflare-api/wrangler.toml`: Worker deployment config, D1 binding, and public asset origin settings for Pages.
 - `cloudflare-api/schema.sql`: D1 schema for semesters, streams, subjects, and generation logs.
-- `cloudflare-api/generate_seed_sql.py`: optional helper to regenerate D1 seed SQL from a local catalog file.
 - `main.py`: Flask host/proxy for local/server deployment. It serves UI files and forwards API calls to the Worker, so data still comes from D1.
 - `templates/`: Flask templates for the legacy app UI and admin pages.
-- `admin_config.json`: optional local file used only if you manually regenerate D1 seed SQL.
-- `frontpage_logs.jsonl`: legacy local log artifact; runtime logging is stored in D1.
 - `requirements.txt`, `pyproject.toml`: Python dependency definitions for the Flask app and local tooling.
 - `package.json`: helper scripts for local Cloudflare Worker development and local static frontend serving.
 

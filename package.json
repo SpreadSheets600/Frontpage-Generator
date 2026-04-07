@@ -1,7 +1,7 @@
 {
   "scripts": {
     "cf:dev": "cd cloudflare-api && npx wrangler@latest dev",
-    "cf:d1:init": "cd cloudflare-api && npx wrangler@latest d1 execute frontpage-db --local --file=./schema.sql && npx wrangler@latest d1 execute frontpage-db --local --file=./seed.generated.sql",
+    "cf:d1:init": "cd cloudflare-api && npx wrangler@latest d1 execute frontpage-db --local --file=./schema.sql",
     "frontend:dev": "python3 -m http.server 3000"
   },
   "dependencies": {

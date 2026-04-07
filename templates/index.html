@@ -143,25 +143,25 @@
   </div>
 </div>
 
-<script type="application/json" id="catalogData">{{ (catalog or [])|tojson|safe }}</script>
+<script type="application/json" id="semestersData">{{ (semesters or [])|tojson|safe }}</script>
+<script type="application/json" id="subjectsData">{{ (subjects or [])|tojson|safe }}</script>
 <script type="application/json" id="streamsData">{{ (streams or [])|tojson|safe }}</script>
 <script>
-  const catalogJson = document.getElementById('catalogData');
-  const catalog = catalogJson ? JSON.parse(catalogJson.textContent || '[]') : [];
+  const semestersJson = document.getElementById('semestersData');
+  const semesters = semestersJson ? JSON.parse(semestersJson.textContent || '[]') : [];
+  const subjectsJson = document.getElementById('subjectsData');
+  const subjects = subjectsJson ? JSON.parse(subjectsJson.textContent || '[]') : [];
   const streamsJson = document.getElementById('streamsData');
   const streams = streamsJson ? JSON.parse(streamsJson.textContent || '[]') : [];
   const semesterSelect = document.getElementById('semesterSelect');
   const streamSelect = document.getElementById('streamSelect');
   const subjectSelect = document.getElementById('subjectSelect');
 
-  const catalogMap = {};
-  catalog.forEach(entry => {
-    catalogMap[String(entry.semester.id)] = (entry.subjects || []).map(subject => ({
-      id: String(subject.subject_id),
-      name: subject.name,
-      code: subject.code
-    }));
-  });
+  const allSubjects = subjects.map(subject => ({
+    id: String(subject.id),
+    name: subject.name,
+    code: subject.code,
+  }));
 
   function resetSelect(selectEl, placeholder) {
     selectEl.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
@@ -190,10 +190,11 @@
   populateStreams();
 
   semesterSelect.addEventListener('change', (event) => {
-    const selectedSemester = event.target.value;
-    const subjects = catalogMap[selectedSemester] || [];
-    populateSelect(subjectSelect, 'Select Subject', subjects, (item) => `${item.name} (${item.code})`);
+    void event;
+    populateSelect(subjectSelect, 'Select Subject', allSubjects, (item) => `${item.name} (${item.code})`);
   });
+
+  populateSelect(subjectSelect, 'Select Subject', allSubjects, (item) => `${item.name} (${item.code})`);
 
   const docCounterEl = document.getElementById('docCounter');
   if (docCounterEl) {

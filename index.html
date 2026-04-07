@@ -314,7 +314,6 @@
     const subjectSelect = document.getElementById("subjectSelect");
     const statusBox = document.getElementById("statusBox");
     const submitButton = document.getElementById("submitButton");
-    const catalogMap = {};
     const streams = [];
     const streamMap = {};
     const subjectMap = {};
@@ -556,24 +555,24 @@
 
     async function loadCatalog() {
       const data = await fetchJson("/api/catalog");
-      const catalog = data.catalog || [];
+      const semesters = data.semesters || [];
       const catalogStreams = data.streams || [];
+      const catalogSubjects = data.subjects || [];
 
-      catalog.forEach((entry) => {
-        const semester = entry.semester || {};
+      semesters.forEach((semester) => {
         semesterMap[String(semester.id)] = semester;
-        catalogMap[String(semester.id)] = (entry.subjects || []).map((subject) => {
-          const normalized = {
-            id: String(subject.subject_id),
-            name: subject.name,
-            code: subject.code,
-          };
-          if (!subjectMap[normalized.id]) {
-            subjectMap[normalized.id] = normalized;
-            allSubjects.push(normalized);
-          }
-          return normalized;
-        });
+      });
+
+      catalogSubjects.forEach((subject) => {
+        const normalized = {
+          id: String(subject.id),
+          name: subject.name,
+          code: subject.code,
+        };
+        if (!subjectMap[normalized.id]) {
+          subjectMap[normalized.id] = normalized;
+          allSubjects.push(normalized);
+        }
       });
 
       catalogStreams.forEach((stream) => {
@@ -585,7 +584,7 @@
       populateSelect(
         semesterSelect,
         "Select Semester",
-        Object.values(semesterMap),
+        semesters,
         (item) => item.label
       );
       populateSelect(streamSelect, "Select Stream", streams, (item) => item.name);
@@ -603,9 +602,8 @@
     }
 
     semesterSelect.addEventListener("change", (event) => {
-      const selectedSemester = event.target.value;
-      const subjects = allSubjects.length ? allSubjects : (catalogMap[selectedSemester] || []);
-      populateSelect(subjectSelect, "Select Subject", subjects, (item) => `${item.name} (${item.code})`);
+      void event;
+      populateSelect(subjectSelect, "Select Subject", allSubjects, (item) => `${item.name} (${item.code})`);
     });
 
     document.getElementById("frontpageForm").addEventListener("submit", async (event) => {
