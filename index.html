@@ -287,6 +287,17 @@
       return host === "127.0.0.1" || host === "localhost" || host === "0.0.0.0";
     }
 
+    function resolveLocalApiBase() {
+      const sameOrigin = normalizeApiBase(window.location.origin);
+      const isStaticHtmlPath = window.location.pathname.endsWith(".html");
+
+      if (sameOrigin && sameOrigin !== "null" && !isStaticHtmlPath) {
+        return sameOrigin;
+      }
+
+      return "http://127.0.0.1:8787";
+    }
+
     function resolveApiBase() {
       const params = new URLSearchParams(window.location.search);
       const override = normalizeApiBase(params.get("apiBase"));
@@ -295,20 +306,21 @@
         return override;
       }
 
-      const host = window.location.hostname;
-      if (isLocalHost(host)) {
-        return "http://127.0.0.1:8787";
-      }
-
       const stored = normalizeApiBase(window.localStorage.getItem("frontpage.apiBase"));
       if (stored) {
         return stored;
       }
 
+      const host = window.location.hostname;
+      if (isLocalHost(host)) {
+        return resolveLocalApiBase();
+      }
+
       return DEPLOYED_API_BASE;
     }
 
-    const API_BASE = resolveApiBase();
+    const API_BASE = normalizeApiBase(resolveApiBase());
+    let activeApiBase = API_BASE;
     const semesterSelect = document.getElementById("semesterSelect");
     const streamSelect = document.getElementById("streamSelect");
     const subjectSelect = document.getElementById("subjectSelect");
@@ -503,7 +515,7 @@
     }
 
     async function logGeneration(payload) {
-      const response = await fetch(`${API_BASE}/api/log-generation`, {
+      const response = await fetch(buildApiUrl(activeApiBase, "/api/log-generation"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -544,8 +556,16 @@
       selectEl.disabled = false;
     }
 
-    async function fetchJson(path) {
-      const response = await fetch(`${API_BASE}${path}`);
+    function buildApiUrl(base, path) {
+      const normalized = normalizeApiBase(base);
+      if (!normalized) {
+        throw new Error("No Worker API base is configured.");
+      }
+      return `${normalized}${path}`;
+    }
+
+    async function fetchJsonForBase(path, base) {
+      const response = await fetch(buildApiUrl(base, path));
       if (!response.ok) {
         const message = await response.text();
         throw new Error(message || `Request failed for ${path}`);
@@ -553,8 +573,43 @@
       return response.json();
     }
 
+    async function fetchJson(path) {
+      return fetchJsonForBase(path, activeApiBase);
+    }
+
     async function loadCatalog() {
-      const data = await fetchJson("/api/catalog");
+      const candidateBases = [];
+      const originBase = normalizeApiBase(window.location.origin);
+      if (originBase && originBase !== "null") {
+        candidateBases.push(originBase);
+      }
+      if (API_BASE && !candidateBases.includes(API_BASE)) {
+        candidateBases.push(API_BASE);
+      }
+
+      if (!candidateBases.length) {
+        throw new Error(
+          "No Worker API base is configured. Reopen the page with ?apiBase=<your-worker> or update DEPLOYED_API_BASE."
+        );
+      }
+
+      let data = null;
+      for (const base of candidateBases) {
+        try {
+          data = await fetchJsonForBase("/api/catalog", base);
+          activeApiBase = base;
+          break;
+        } catch (error) {
+          console.warn("Catalog fetch failed for", base, error);
+        }
+      }
+
+      if (!data) {
+        throw new Error(
+          "Could not load the catalog from the Worker API. Check the API base and try again."
+        );
+      }
+
       const semesters = data.semesters || [];
       const catalogStreams = data.streams || [];
       const catalogSubjects = data.subjects || [];
@@ -593,7 +648,7 @@
 
     async function loadStats() {
       try {
-        const data = await fetchJson("/api/stats");
+      const data = await fetchJson("/api/stats");
         const count = Number(data.generated_count || 0);
         document.getElementById("docCounter").textContent = count;
       } catch (error) {
