@@ -12,6 +12,11 @@ app = Flask(__name__, template_folder="templates", static_folder="static")
 
 PORT = int(os.getenv("PORT", 5000))
 WORKER_API_BASE = str(os.getenv("WORKER_API_BASE", "http://127.0.0.1:8787")).rstrip("/")
+PUBLIC_DIR = Path("public")
+
+
+def public_file(*parts):
+    return PUBLIC_DIR.joinpath(*parts)
 
 
 def worker_url(path):
@@ -71,13 +76,13 @@ def forward_to_worker(path):
 
 @app.route("/")
 def index():
-    return send_file("index.html")
+    return send_file(public_file("index.html"))
 
 
 @app.route("/feedback")
 @app.route("/feedback/")
 def feedback():
-    return send_file("feedback/index.html")
+    return send_file(public_file("feedback", "index.html"))
 
 
 @app.route("/frontpages", methods=["GET", "POST"])
@@ -93,6 +98,8 @@ def admin_dashboard():
 @app.route("/downloads/index-page", methods=["GET"])
 def download_index_page():
     index_path = Path("static/index_page.pdf")
+    if not index_path.exists():
+        index_path = public_file("static", "index_page.pdf")
     if not index_path.exists():
         return Response(
             '{"error":"Index page file is unavailable"}',

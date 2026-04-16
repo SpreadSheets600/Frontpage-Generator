@@ -306,6 +306,7 @@ dist
 # Local Cloudflare development artifacts
 .wrangler/
 .vscode/
+.venv/
 cloudflare-api/.wrangler/
 cloudflare-api/.dev.vars
 cloudflare-api/seed.generated.sql

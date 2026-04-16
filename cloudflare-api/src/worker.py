@@ -21,7 +21,7 @@ def cors_headers(env):
     return {
         "Access-Control-Allow-Origin": allowed_origin(env),
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key",
     }
 
 
@@ -73,13 +73,6 @@ def is_gmail_address(email):
         return False
     email_lower = str(email).strip().lower()
     return email_lower.endswith("@gmail.com") and email_lower.count("@") == 1
-
-
-def validate_gmail_field(payload, field_name):
-    value = str(payload.get(field_name, "")).strip()
-    if value and not is_gmail_address(value):
-        return f"{field_name} must be a valid Gmail address"
-    return None
 
 
 def env_value(env, name, default=""):
@@ -199,6 +192,16 @@ def normalize_feedback_text(value, limit):
     lines = [line.strip() for line in plain_text(value).splitlines()]
     text = "\n".join(line for line in lines if line)
     return clamp_text(text.replace("@", "@\u200b"), limit)
+
+
+async def parse_json_payload(request):
+    try:
+        payload = await request.json()
+    except Exception:
+        return None, json_response({"error": "Invalid JSON payload"}, status=400)
+    if not isinstance(payload, dict):
+        return None, json_response({"error": "JSON body must be an object"}, status=400)
+    return payload, None
 
 
 async def send_feedback_to_discord(env, payload):
@@ -512,6 +515,8 @@ class Default(WorkerEntrypoint):
     async def fetch(self, request):
         path = path_for(request)
         method = request.method.upper()
+        if method == "HEAD":
+            method = "GET"
 
         if method == "OPTIONS":
             return with_cors(self.env, Response("", status=204))
@@ -550,7 +555,9 @@ class Default(WorkerEntrypoint):
             )
 
         if path == "/api/generate-pdf" and method == "POST":
-            payload = await request.json()
+            payload, parse_error = await parse_json_payload(request)
+            if parse_error:
+                return with_cors(self.env, parse_error)
             required_fields = [
                 "name",
                 "roll",
@@ -588,7 +595,6 @@ class Default(WorkerEntrypoint):
 
                 browser_account_id = env_value(self.env, "CLOUDFLARE_ACCOUNT_ID", "")
                 browser_token = env_value(self.env, "BROWSER_RENDERING_API_TOKEN", "")
-                template_url = env_value(self.env, "PUBLIC_TEMPLATE_URL", "")
 
                 if not browser_account_id or not browser_token:
                     return with_cors(
@@ -597,15 +603,6 @@ class Default(WorkerEntrypoint):
                             {
                                 "error": "Browser Rendering credentials are not configured."
                             },
-                            status=500,
-                        ),
-                    )
-
-                if not template_url:
-                    return with_cors(
-                        self.env,
-                        json_response(
-                            {"error": "PUBLIC_TEMPLATE_URL is not configured."},
                             status=500,
                         ),
                     )
@@ -695,7 +692,9 @@ class Default(WorkerEntrypoint):
                 )
 
         if path == "/api/log-generation" and method == "POST":
-            payload = await request.json()
+            payload, parse_error = await parse_json_payload(request)
+            if parse_error:
+                return with_cors(self.env, parse_error)
             required_fields = [
                 "name",
                 "roll",
@@ -734,7 +733,9 @@ class Default(WorkerEntrypoint):
                 )
 
         if path == "/api/feedback" and method == "POST":
-            payload = await request.json()
+            payload, parse_error = await parse_json_payload(request)
+            if parse_error:
+                return with_cors(self.env, parse_error)
             required_fields = ["name", "topic", "message"]
             missing = require_fields(payload, required_fields)
             if missing:
@@ -818,7 +819,9 @@ class Default(WorkerEntrypoint):
                 )
 
             if method in {"POST", "PUT", "DELETE"}:
-                payload = await request.json()
+                payload, parse_error = await parse_json_payload(request)
+                if parse_error:
+                    return with_cors(self.env, parse_error)
 
             if method == "POST":
                 subject_name = str(payload.get("name", "") or "").strip()
@@ -1063,7 +1066,9 @@ class Default(WorkerEntrypoint):
                 return with_cors(self.env, json_response({"error": reason}, status=401))
 
             if method in {"POST", "DELETE"}:
-                payload = await request.json()
+                payload, parse_error = await parse_json_payload(request)
+                if parse_error:
+                    return with_cors(self.env, parse_error)
 
             if method == "POST":
                 name = str(payload.get("label") or payload.get("name") or "").strip()
