@@ -5,7 +5,6 @@
   <img src="https://img.shields.io/badge/Cloudflare-Workers-orange?style=for-the-badge&logo=cloudflare&logoColor=white" alt="Cloudflare Workers">
   <img src="https://img.shields.io/badge/Cloudflare-D1-orange?style=for-the-badge&logo=cloudflare&logoColor=white" alt="Cloudflare D1">
   <img src="https://img.shields.io/badge/Cloudflare-Pages-blue?style=for-the-badge&logo=cloudflare&logoColor=white" alt="Cloudflare Pages">
-  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
 </p>
 
 > A serverless web application for generating academic frontpage covers automatically. Built on Cloudflare Workers, D1, and Pages.
