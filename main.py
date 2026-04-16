@@ -11,9 +11,7 @@ load_dotenv()
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
 PORT = int(os.getenv("PORT", 5000))
-WORKER_API_BASE = str(
-    os.getenv("WORKER_API_BASE", "http://127.0.0.1:8787")
-).rstrip("/")
+WORKER_API_BASE = str(os.getenv("WORKER_API_BASE", "http://127.0.0.1:8787")).rstrip("/")
 
 
 def worker_url(path):
@@ -74,6 +72,12 @@ def forward_to_worker(path):
 @app.route("/")
 def index():
     return send_file("index.html")
+
+
+@app.route("/feedback")
+@app.route("/feedback/")
+def feedback():
+    return send_file("feedback/index.html")
 
 
 @app.route("/frontpages", methods=["GET", "POST"])

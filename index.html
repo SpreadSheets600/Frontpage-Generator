@@ -1,745 +1,1076 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="dark">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Frontpage Generator</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;500;700&display=swap"
-    rel="stylesheet"
-  />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script>
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Space Grotesk"', "sans-serif"],
-            mono: ['"JetBrains Mono"', "monospace"],
-          },
-          colors: {
-            obsidian: "#030305",
-            electric: "#3B82F6",
-            cyber: "#8B5CF6",
-            acid: "#CCFF00",
-          },
-          animation: {
-            float: "float 6s ease-in-out infinite",
-            "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-          },
-          keyframes: {
-            float: {
-              "0%, 100%": { transform: "translateY(0)" },
-              "50%": { transform: "translateY(-20px)" },
-            },
-          },
-        },
-      },
-    };
-  </script>
-  <style>
-    body {
-      background-color: #030305;
-      color: #ffffff;
-      overflow-x: hidden;
-    }
-
-    .bg-noise {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      opacity: 0.03;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    }
-
-    .glass {
-      background: rgba(255, 255, 255, 0.03);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-  </style>
-</head>
-<body class="antialiased font-sans selection:bg-electric selection:text-white">
-  <div class="bg-noise"></div>
-
-  <div class="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
-    <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-electric/10 blur-[120px] animate-pulse-slow"></div>
-    <div
-      class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-cyber/10 blur-[120px] animate-pulse-slow"
-      style="animation-delay: 2s"
-    ></div>
-  </div>
-
-  <div class="relative z-10 min-h-screen flex flex-col">
-    <nav class="fixed top-0 w-full z-50 border-b border-white/5 glass">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <a href="/" class="text-lg sm:text-2xl font-bold tracking-tighter flex items-center gap-2">
-          <span class="w-3 h-3 bg-electric rounded-full animate-pulse"></span>
-          FRONTPAGE<span class="text-white/40">GEN</span>
-        </a>
-      </div>
-    </nav>
-
-    <main class="flex-grow pt-28 sm:pt-24 pb-12 px-4 sm:px-6">
-      <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center min-h-[80vh]">
-        <div class="space-y-8 reveal text-center lg:text-left">
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-electric/30 bg-electric/10 text-electric font-mono text-xs">
-            <span class="relative flex h-2 w-2">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-electric opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-electric"></span>
-            </span>
-            API-DRIVEN DEPLOYMENT
-          </div>
-
-          <h1 class="text-5xl sm:text-6xl md:text-8xl font-bold tracking-tighter leading-[0.9]">
-            GENERATE <br />
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-electric to-cyber">FRONTPAGES</span>
-          </h1>
-
-          <p class="text-lg sm:text-xl text-white/60 font-light max-w-md leading-relaxed mx-auto lg:mx-0">
-            Static Cloudflare Pages frontend. Separate Python Worker API. The document is rendered in-browser from the institute template and the Worker keeps catalog data and usage logs in sync.
-          </p>
-
-          <div class="flex flex-col sm:flex-row gap-4 pt-4 items-center lg:items-start justify-center lg:justify-start">
-            <div class="flex -space-x-4">
-              <div class="w-12 h-12 rounded-full border-2 border-obsidian bg-white/10 backdrop-blur flex items-center justify-center text-xs font-mono">CF</div>
-              <div class="w-12 h-12 rounded-full border-2 border-obsidian bg-white/10 backdrop-blur flex items-center justify-center text-xs font-mono">PY</div>
-              <div class="w-12 h-12 rounded-full border-2 border-obsidian bg-white/10 backdrop-blur flex items-center justify-center text-xs font-mono">PDF</div>
-            </div>
-            <div class="flex flex-col justify-center text-center sm:text-left">
-              <span class="text-sm font-bold"><span id="docCounter">0</span>+ Generated</span>
-              <span class="text-xs text-white/40 font-mono">Fetched from Worker API</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="relative reveal" style="transition-delay: 200ms">
-          <div class="glass p-6 md:p-10 rounded-3xl relative overflow-hidden">
-            <h2 class="text-2xl font-bold mb-8 flex items-center gap-3">
-              <svg class="w-6 h-6 text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-              </svg>
-              INPUT PARAMETERS
-            </h2>
-
-            <form id="frontpageForm" class="space-y-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-2">
-                  <label class="text-xs font-mono text-white/50 uppercase tracking-wider">Full Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all"
-                    placeholder="John Doe"
-                  />
-                </div>
-                <div class="space-y-2">
-                  <label class="text-xs font-mono text-white/50 uppercase tracking-wider">Roll Number</label>
-                  <input
-                    type="text"
-                    name="roll"
-                    required
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all"
-                    placeholder="123456"
-                  />
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-2">
-                  <label class="text-xs font-mono text-white/50 uppercase tracking-wider">Registration No</label>
-                  <input
-                    type="text"
-                    name="reg"
-                    required
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all"
-                    placeholder="A-1234"
-                  />
-                </div>
-                <div class="space-y-2">
-                  <label class="text-xs font-mono text-white/50 uppercase tracking-wider">Semester</label>
-                  <select
-                    name="semester_id"
-                    id="semesterSelect"
-                    required
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all appearance-none"
-                  >
-                    <option value="" disabled selected>Loading semesters...</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="space-y-2">
-                <label class="text-xs font-mono text-white/50 uppercase tracking-wider">Stream</label>
-                <select
-                  name="stream_id"
-                  id="streamSelect"
-                  required
-                  disabled
-                  class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all appearance-none"
-                >
-                  <option value="" disabled selected>Loading streams...</option>
-                </select>
-              </div>
-
-              <div class="space-y-2">
-                <label class="text-xs font-mono text-white/50 uppercase tracking-wider">Subject</label>
-                <select
-                  name="subject_id"
-                  id="subjectSelect"
-                  required
-                  disabled
-                  class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all appearance-none"
-                >
-                  <option value="" disabled selected>Select Subject</option>
-                </select>
-              </div>
-
-              <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-                <div>
-                  <p class="text-sm font-semibold text-white">Download as PDF</p>
-                  <p class="text-xs text-white/50 mt-1">
-                    Toggle to receive the generated frontpage in PDF format.
-                  </p>
-                </div>
-                <label class="relative inline-flex cursor-pointer items-center">
-                  <input type="checkbox" name="as_pdf" class="sr-only peer" checked />
-                  <div class="w-12 h-6 bg-white/20 rounded-full peer peer-focus:ring-2 peer-focus:ring-electric peer-checked:bg-electric after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:after:translate-x-6"></div>
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                id="submitButton"
-                class="group w-full bg-white text-black font-bold py-4 rounded-xl mt-4 hover:bg-electric hover:text-white transition-all duration-300 relative overflow-hidden"
-              >
-                <span class="relative z-10 flex items-center justify-center gap-2">
-                  GENERATE DOCUMENT
-                  <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-                  </svg>
-                </span>
-              </button>
-
-              <a
-                href="/static/index_page.pdf"
-                class="w-full inline-flex items-center justify-center gap-2 bg-transparent border border-white/20 text-white font-semibold py-3 rounded-xl hover:border-electric hover:text-electric transition-colors"
-              >
-                INDEX PAGE
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" />
-                </svg>
-              </a>
-            </form>
-
-            <div id="statusBox" class="hidden mt-6 rounded-2xl border px-4 py-3 text-sm"></div>
-          </div>
-        </div>
-      </div>
-    </main>
-
-    <footer class="border-t border-white/5 bg-black/20 backdrop-blur-lg mt-auto">
-      <div class="max-w-7xl mx-auto px-6 py-12">
-        <div class="flex flex-col md:flex-row justify-between items-end gap-8">
-          <div>
-            <h3 class="text-4xl font-bold tracking-tighter mb-2">
-              <a href="https://github.com/spreadsheets600/frontpage-generator" class="hover:text-electric transition-colors">GITHUB REPO</a>
-            </h3>
-            <p class="font-mono text-white/40 text-sm">Static frontend prepared for Cloudflare Pages</p>
-          </div>
-          <div class="text-right">
-            <p class="font-mono text-xs text-white/20">BY <a href="https://github.com/spreadsheets600" class="hover:text-cyber transition-colors">SPREADSHEETS600</a></p>
-          </div>
-        </div>
-      </div>
-    </footer>
-  </div>
-
-  <script>
-    const DEPLOYED_API_BASE = "https://frontpage-api.spreadsheets600.workers.dev";
-    const TEMPLATE_URL = new URL("/static/template.png", window.location.origin).toString();
-    const FONT_URL = new URL("/static/Sans.ttf", window.location.origin).toString();
-    const TEMPLATE_WIDTH = 1414;
-    const TEMPLATE_HEIGHT = 2000;
-    const FIELD_START_X = 530;
-    const FIELD_START_Y = 1080;
-    const FIELD_LINE_GAP = 87;
-    const FIELD_MAX_WIDTH = 760;
-    const PAPER_NAME_MAX_WIDTH = 760;
-    const FIELD_FONT_SIZE = 45;
-    const FIELD_MIN_FONT_SIZE = 26;
-    const PAPER_NAME_LINE_HEIGHT = 52;
-    const FONT_FAMILY = "FrontpageSans";
-    const renderAssetsPromise = initializeRenderAssets();
-
-    function normalizeApiBase(value) {
-      return String(value || "").trim().replace(/\/+$/, "");
-    }
-
-    function isLocalHost(host) {
-      return host === "127.0.0.1" || host === "localhost" || host === "0.0.0.0";
-    }
-
-    function resolveLocalApiBase() {
-      const sameOrigin = normalizeApiBase(window.location.origin);
-      const isStaticHtmlPath = window.location.pathname.endsWith(".html");
-
-      if (sameOrigin && sameOrigin !== "null" && !isStaticHtmlPath) {
-        return sameOrigin;
-      }
-
-      return "http://127.0.0.1:8787";
-    }
-
-    function resolveApiBase() {
-      const params = new URLSearchParams(window.location.search);
-      const override = normalizeApiBase(params.get("apiBase"));
-      if (override) {
-        window.localStorage.setItem("frontpage.apiBase", override);
-        return override;
-      }
-
-      const stored = normalizeApiBase(window.localStorage.getItem("frontpage.apiBase"));
-      if (stored) {
-        return stored;
-      }
-
-      const host = window.location.hostname;
-      if (isLocalHost(host)) {
-        return resolveLocalApiBase();
-      }
-
-      return DEPLOYED_API_BASE;
-    }
-
-    const API_BASE = normalizeApiBase(resolveApiBase());
-    let activeApiBase = API_BASE;
-    const semesterSelect = document.getElementById("semesterSelect");
-    const streamSelect = document.getElementById("streamSelect");
-    const subjectSelect = document.getElementById("subjectSelect");
-    const statusBox = document.getElementById("statusBox");
-    const submitButton = document.getElementById("submitButton");
-    const streams = [];
-    const streamMap = {};
-    const subjectMap = {};
-    const semesterMap = {};
-    const allSubjects = [];
-
-    function setStatus(message, tone) {
-      const toneClasses = {
-        success: "border-acid/40 bg-acid/10 text-acid",
-        error: "border-red-400/40 bg-red-400/10 text-red-200",
-        info: "border-electric/40 bg-electric/10 text-electric",
-      };
-      statusBox.className = "mt-6 rounded-2xl border px-4 py-3 text-sm " + (toneClasses[tone] || toneClasses.info);
-      statusBox.textContent = message;
-      statusBox.classList.remove("hidden");
-    }
-
-    function resetSelect(selectEl, placeholder) {
-      selectEl.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
-      selectEl.disabled = true;
-    }
-
-    async function initializeRenderAssets() {
-      const templateImage = await loadImage(TEMPLATE_URL);
-      await loadCanvasFont();
-      return { templateImage };
-    }
-
-    function loadImage(src) {
-      return new Promise((resolve, reject) => {
-        const image = new Image();
-        image.onload = () => resolve(image);
-        image.onerror = () => reject(new Error(`Could not load template image from ${src}`));
-        image.src = src;
-      });
-    }
-
-    async function loadCanvasFont() {
-      if (document.fonts.check(`16px "${FONT_FAMILY}"`)) {
-        return;
-      }
-      const font = new FontFace(FONT_FAMILY, `url("${FONT_URL}")`);
-      await font.load();
-      document.fonts.add(font);
-      await document.fonts.load(`16px "${FONT_FAMILY}"`);
-    }
-
-    function buildRenderRows(payload) {
-      return [
-        { text: payload.name, y: FIELD_START_Y, maxWidth: FIELD_MAX_WIDTH },
-        { text: payload.roll, y: FIELD_START_Y + FIELD_LINE_GAP, maxWidth: FIELD_MAX_WIDTH },
-        { text: payload.reg, y: FIELD_START_Y + FIELD_LINE_GAP * 2, maxWidth: FIELD_MAX_WIDTH },
-        { text: payload.stream_label, y: FIELD_START_Y + FIELD_LINE_GAP * 3, maxWidth: FIELD_MAX_WIDTH },
-        { text: payload.semester_label, y: FIELD_START_Y + FIELD_LINE_GAP * 4, maxWidth: FIELD_MAX_WIDTH },
-        { text: payload.subject_code, y: FIELD_START_Y + FIELD_LINE_GAP * 5, maxWidth: FIELD_MAX_WIDTH },
-        {
-          text: payload.subject_name,
-          y: FIELD_START_Y + FIELD_LINE_GAP * 6,
-          maxWidth: PAPER_NAME_MAX_WIDTH,
-          allowWrap: true,
-        },
-      ];
-    }
-
-    function createFrontpageCanvas(templateImage, payload) {
-      const canvas = document.createElement("canvas");
-      canvas.width = TEMPLATE_WIDTH;
-      canvas.height = TEMPLATE_HEIGHT;
-      const context = canvas.getContext("2d");
-
-      context.drawImage(templateImage, 0, 0, TEMPLATE_WIDTH, TEMPLATE_HEIGHT);
-      context.fillStyle = "#000000";
-      context.textBaseline = "alphabetic";
-
-      buildRenderRows(payload).forEach((row) => {
-        if (row.allowWrap) {
-          drawWrappedField(context, row.text, FIELD_START_X, row.y, row.maxWidth);
-          return;
-        }
-        drawSingleLineField(context, row.text, FIELD_START_X, row.y, row.maxWidth);
-      });
-
-      return canvas;
-    }
-
-    function applyFont(context, size) {
-      context.font = `${size}px "${FONT_FAMILY}", Arial, sans-serif`;
-    }
-
-    function fitFontSize(context, text, maxWidth, startSize = FIELD_FONT_SIZE) {
-      let size = startSize;
-      while (size > FIELD_MIN_FONT_SIZE) {
-        applyFont(context, size);
-        if (context.measureText(text).width <= maxWidth) {
-          return size;
-        }
-        size -= 1;
-      }
-      return FIELD_MIN_FONT_SIZE;
-    }
-
-    function drawSingleLineField(context, text, x, y, maxWidth) {
-      const value = String(text || "").trim();
-      const size = fitFontSize(context, value, maxWidth);
-      applyFont(context, size);
-      context.fillText(value, x, y, maxWidth);
-    }
-
-    function wrapText(context, text, maxWidth) {
-      const words = String(text || "").trim().split(/\s+/).filter(Boolean);
-      if (!words.length) {
-        return [""];
-      }
-
-      const lines = [];
-      let currentLine = words.shift();
-
-      words.forEach((word) => {
-        const nextLine = `${currentLine} ${word}`;
-        if (context.measureText(nextLine).width <= maxWidth) {
-          currentLine = nextLine;
-          return;
-        }
-        lines.push(currentLine);
-        currentLine = word;
-      });
-
-      lines.push(currentLine);
-      return lines;
-    }
-
-    function drawWrappedField(context, text, x, y, maxWidth) {
-      let size = FIELD_FONT_SIZE;
-      let lines = [];
-
-      while (size > FIELD_MIN_FONT_SIZE) {
-        applyFont(context, size);
-        lines = wrapText(context, text, maxWidth);
-        if (lines.length <= 2) {
-          break;
-        }
-        size -= 1;
-      }
-
-      applyFont(context, size);
-      lines.slice(0, 2).forEach((line, index) => {
-        context.fillText(line, x, y + index * PAPER_NAME_LINE_HEIGHT, maxWidth);
-      });
-    }
-
-    async function generatePdfBlob(canvas) {
-      const { jsPDF } = window.jspdf || {};
-      if (!jsPDF) {
-        throw new Error("jsPDF failed to load.");
-      }
-
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      const imageData = canvas.toDataURL("image/png");
-      pdf.addImage(imageData, "PNG", 0, 0, 210, 297);
-      return pdf.output("blob");
-    }
-
-    async function generateDocumentBlob(payload) {
-      const { templateImage } = await renderAssetsPromise;
-      const canvas = createFrontpageCanvas(templateImage, payload);
-
-      if (payload.as_pdf) {
-        const blob = await generatePdfBlob(canvas);
-        return { blob, contentType: "application/pdf" };
-      }
-
-      const blob = await new Promise((resolve, reject) => {
-        canvas.toBlob((result) => {
-          if (result) {
-            resolve(result);
-            return;
-          }
-          reject(new Error("Could not render PNG output."));
-        }, "image/png");
-      });
-      return { blob, contentType: "image/png" };
-    }
-
-    async function logGeneration(payload) {
-      const response = await fetch(buildApiUrl(activeApiBase, "/api/log-generation"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || "Could not log generation.");
-      }
-    }
-
-    function downloadBlob(blob, payload) {
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      const extension = payload.as_pdf ? "pdf" : "png";
-      link.download = `${payload.name}-${payload.subject_name}-FrontPageCover.${extension}`.replace(/\s+/g, "-");
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => window.URL.revokeObjectURL(downloadUrl), 1000);
-    }
-
-    function populateSelect(selectEl, placeholder, items, formatter) {
-      resetSelect(selectEl, placeholder);
-      if (!items || !items.length) {
-        return;
-      }
-      items.forEach((item) => {
-        const option = document.createElement("option");
-        option.value = item.id;
-        option.textContent = formatter(item);
-        option.className = "bg-obsidian";
-        selectEl.appendChild(option);
-      });
-      selectEl.disabled = false;
-    }
-
-    function buildApiUrl(base, path) {
-      const normalized = normalizeApiBase(base);
-      if (!normalized) {
-        throw new Error("No Worker API base is configured.");
-      }
-      return `${normalized}${path}`;
-    }
-
-    async function fetchJsonForBase(path, base) {
-      const response = await fetch(buildApiUrl(base, path));
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || `Request failed for ${path}`);
-      }
-      return response.json();
-    }
-
-    async function fetchJson(path) {
-      return fetchJsonForBase(path, activeApiBase);
-    }
-
-    async function loadCatalog() {
-      const candidateBases = [];
-      const originBase = normalizeApiBase(window.location.origin);
-      if (originBase && originBase !== "null") {
-        candidateBases.push(originBase);
-      }
-      if (API_BASE && !candidateBases.includes(API_BASE)) {
-        candidateBases.push(API_BASE);
-      }
-
-      if (!candidateBases.length) {
-        throw new Error(
-          "No Worker API base is configured. Reopen the page with ?apiBase=<your-worker> or update DEPLOYED_API_BASE."
-        );
-      }
-
-      let data = null;
-      for (const base of candidateBases) {
-        try {
-          data = await fetchJsonForBase("/api/catalog", base);
-          activeApiBase = base;
-          break;
-        } catch (error) {
-          console.warn("Catalog fetch failed for", base, error);
-        }
-      }
-
-      if (!data) {
-        throw new Error(
-          "Could not load the catalog from the Worker API. Check the API base and try again."
-        );
-      }
-
-      const semesters = data.semesters || [];
-      const catalogStreams = data.streams || [];
-      const catalogSubjects = data.subjects || [];
-
-      semesters.forEach((semester) => {
-        semesterMap[String(semester.id)] = semester;
-      });
-
-      catalogSubjects.forEach((subject) => {
-        const normalized = {
-          id: String(subject.id),
-          name: subject.name,
-          code: subject.code,
-        };
-        if (!subjectMap[normalized.id]) {
-          subjectMap[normalized.id] = normalized;
-          allSubjects.push(normalized);
-        }
-      });
-
-      catalogStreams.forEach((stream) => {
-        const normalized = { id: String(stream.id), name: stream.name };
-        streams.push(normalized);
-        streamMap[normalized.id] = normalized;
-      });
-
-      populateSelect(
-        semesterSelect,
-        "Select Semester",
-        semesters,
-        (item) => item.label
-      );
-      populateSelect(streamSelect, "Select Stream", streams, (item) => item.name);
-      populateSelect(subjectSelect, "Select Subject", allSubjects, (item) => `${item.name} (${item.code})`);
-    }
-
-    async function loadStats() {
-      try {
-      const data = await fetchJson("/api/stats");
-        const count = Number(data.generated_count || 0);
-        document.getElementById("docCounter").textContent = count;
-      } catch (error) {
-        console.error("Failed to fetch stats", error);
-      }
-    }
-
-    semesterSelect.addEventListener("change", (event) => {
-      void event;
-      populateSelect(subjectSelect, "Select Subject", allSubjects, (item) => `${item.name} (${item.code})`);
-    });
-
-    document.getElementById("frontpageForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
-      submitButton.disabled = true;
-      submitButton.classList.add("opacity-60", "cursor-not-allowed");
-      setStatus("Generating document locally from the template...", "info");
-
-      try {
-        const formData = new FormData(event.currentTarget);
-        const semester = semesterMap[String(formData.get("semester_id"))];
-        const stream = streamMap[String(formData.get("stream_id"))];
-        const subject = subjectMap[String(formData.get("subject_id"))];
-
-        if (!semester || !stream || !subject) {
-          throw new Error("Please select a valid semester, stream, and subject.");
-        }
-
-        const payload = {
-          name: String(formData.get("name") || "").trim(),
-          roll: String(formData.get("roll") || "").trim(),
-          reg: String(formData.get("reg") || "").trim(),
-          semester_id: Number(formData.get("semester_id")),
-          stream_id: Number(formData.get("stream_id")),
-          subject_id: Number(formData.get("subject_id")),
-          as_pdf: formData.get("as_pdf") === "on",
-          semester_label: semester.label,
-          stream_label: stream.name,
-          subject_name: subject.name,
-          subject_code: subject.code,
-        };
-
-        const { blob } = await generateDocumentBlob(payload);
-        downloadBlob(blob, payload);
-        setStatus(`${payload.as_pdf ? "PDF" : "PNG"} generated and downloaded.`, "success");
-
-        try {
-          await logGeneration(payload);
-          await loadStats();
-        } catch (logError) {
-          console.error("Generation logging failed", logError);
-        }
-      } catch (error) {
-        console.error(error);
-        setStatus(error.message || "Something went wrong while generating the document.", "error");
-      } finally {
-        submitButton.disabled = false;
-        submitButton.classList.remove("opacity-60", "cursor-not-allowed");
-      }
-    });
-
-    document.addEventListener("DOMContentLoaded", async () => {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("opacity-100", "translate-y-0");
-              entry.target.classList.remove("opacity-0", "translate-y-10");
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Frontpage Generator</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;500;700&display=swap"
+            rel="stylesheet"
+        />
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+        <script>
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ['"Space Grotesk"', "sans-serif"],
+                            mono: ['"JetBrains Mono"', "monospace"],
+                        },
+                        colors: {
+                            obsidian: "#030305",
+                            electric: "#3B82F6",
+                            cyber: "#8B5CF6",
+                            acid: "#CCFF00",
+                        },
+                        animation: {
+                            float: "float 6s ease-in-out infinite",
+                            "pulse-slow":
+                                "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                        },
+                        keyframes: {
+                            float: {
+                                "0%, 100%": { transform: "translateY(0)" },
+                                "50%": { transform: "translateY(-20px)" },
+                            },
+                        },
+                    },
+                },
+            };
+        </script>
+        <style>
+            body {
+                background-color: #030305;
+                color: #ffffff;
+                overflow-x: hidden;
             }
-          });
-        },
-        { threshold: 0.1 }
-      );
 
-      document.querySelectorAll(".reveal").forEach((el) => {
-        el.classList.add("transition-all", "duration-1000", "opacity-0", "translate-y-10");
-        observer.observe(el);
-      });
+            .bg-noise {
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                z-index: 0;
+                opacity: 0.03;
+                background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            }
 
-      try {
-        await loadCatalog();
-        await loadStats();
-        setInterval(loadStats, 30000);
-        setStatus("Catalog and stats loaded from Worker API.", "success");
-      } catch (error) {
-        console.error(error);
-        resetSelect(semesterSelect, "Failed to load catalog");
-        resetSelect(streamSelect, "Failed to load streams");
-        setStatus("Could not reach the Worker API. Check the API base URL and CORS settings.", "error");
-      }
-    });
-  </script>
-</body>
+            .glass {
+                background: rgba(255, 255, 255, 0.03);
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+            }
+        </style>
+    </head>
+    <body
+        class="antialiased font-sans selection:bg-electric selection:text-white"
+    >
+        <div class="bg-noise"></div>
+
+        <div class="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
+            <div
+                class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-electric/10 blur-[120px] animate-pulse-slow"
+            ></div>
+            <div
+                class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-cyber/10 blur-[120px] animate-pulse-slow"
+                style="animation-delay: 2s"
+            ></div>
+        </div>
+
+        <div class="relative z-10 min-h-screen flex flex-col">
+            <nav class="fixed top-0 w-full z-50 border-b border-white/5 glass">
+                <div
+                    class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between"
+                >
+                    <a
+                        href="/"
+                        class="text-lg sm:text-2xl font-bold tracking-tighter flex items-center gap-2"
+                    >
+                        <span
+                            class="w-3 h-3 bg-electric rounded-full animate-pulse"
+                        ></span>
+                        FRONTPAGE<span class="text-white/40">GEN</span>
+                    </a>
+                    <div
+                        class="flex items-center gap-4 sm:gap-8 text-xs sm:text-sm font-mono text-white/60"
+                    >
+                        <a href="/" class="text-white transition-colors"
+                            >GENERATOR</a
+                        >
+                        <a
+                            href="/feedback/"
+                            class="px-3 py-1.5 rounded-lg border border-cyber/40 bg-cyber/10 text-cyber hover:bg-cyber hover:text-white transition-all duration-300"
+                        >
+                            FEEDBACK
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <main class="flex-grow pt-28 sm:pt-24 pb-12 px-4 sm:px-6">
+                <div
+                    class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center min-h-[80vh]"
+                >
+                    <div class="space-y-8 reveal text-center lg:text-left">
+                        <div
+                            class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-electric/30 bg-electric/10 text-electric font-mono text-xs"
+                        >
+                            <span class="relative flex h-2 w-2">
+                                <span
+                                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-electric opacity-75"
+                                ></span>
+                                <span
+                                    class="relative inline-flex rounded-full h-2 w-2 bg-electric"
+                                ></span>
+                            </span>
+                            API-DRIVEN DEPLOYMENT
+                        </div>
+
+                        <h1
+                            class="text-5xl sm:text-6xl md:text-8xl font-bold tracking-tighter leading-[0.9]"
+                        >
+                            GENERATE <br />
+                            <span
+                                class="text-transparent bg-clip-text bg-gradient-to-r from-electric to-cyber"
+                                >FRONTPAGES</span
+                            >
+                        </h1>
+
+                        <p
+                            class="text-lg sm:text-xl text-white/60 font-light max-w-md leading-relaxed mx-auto lg:mx-0"
+                        >
+                            One stop place to generate frontpages for lab
+                            copies.
+                        </p>
+
+                        <div
+                            class="flex flex-col sm:flex-row gap-4 pt-4 items-center lg:items-start justify-center lg:justify-start"
+                        >
+                            <div class="flex -space-x-4">
+                                <div
+                                    class="w-12 h-12 rounded-full border-2 border-obsidian bg-white/10 backdrop-blur flex items-center justify-center text-xs font-mono"
+                                >
+                                    CF
+                                </div>
+                                <div
+                                    class="w-12 h-12 rounded-full border-2 border-obsidian bg-white/10 backdrop-blur flex items-center justify-center text-xs font-mono"
+                                >
+                                    PY
+                                </div>
+                                <div
+                                    class="w-12 h-12 rounded-full border-2 border-obsidian bg-white/10 backdrop-blur flex items-center justify-center text-xs font-mono"
+                                >
+                                    PDF
+                                </div>
+                            </div>
+                            <div
+                                class="flex flex-col justify-center text-center sm:text-left"
+                            >
+                                <span class="text-sm font-bold"
+                                    ><span id="docCounter">0</span>+
+                                    Generated</span
+                                >
+                                <span class="text-xs text-white/40 font-mono"
+                                    >Fetched from Worker API</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="relative reveal"
+                        style="transition-delay: 200ms"
+                    >
+                        <div
+                            class="glass p-6 md:p-10 rounded-3xl relative overflow-hidden"
+                        >
+                            <h2
+                                class="text-2xl font-bold mb-8 flex items-center gap-3"
+                            >
+                                <svg
+                                    class="w-6 h-6 text-electric"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    ></path>
+                                </svg>
+                                INPUT PARAMETERS
+                            </h2>
+
+                            <form id="frontpageForm" class="space-y-6">
+                                <div
+                                    class="grid grid-cols-1 md:grid-cols-2 gap-6"
+                                >
+                                    <div class="space-y-2">
+                                        <label
+                                            class="text-xs font-mono text-white/50 uppercase tracking-wider"
+                                            >Full Name</label
+                                        >
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            required
+                                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all"
+                                            placeholder="John Doe"
+                                        />
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label
+                                            class="text-xs font-mono text-white/50 uppercase tracking-wider"
+                                            >Roll Number</label
+                                        >
+                                        <input
+                                            type="text"
+                                            name="roll"
+                                            required
+                                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all"
+                                            placeholder="123456"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div
+                                    class="grid grid-cols-1 md:grid-cols-2 gap-6"
+                                >
+                                    <div class="space-y-2">
+                                        <label
+                                            class="text-xs font-mono text-white/50 uppercase tracking-wider"
+                                            >Registration No</label
+                                        >
+                                        <input
+                                            type="text"
+                                            name="reg"
+                                            required
+                                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all"
+                                            placeholder="A-1234"
+                                        />
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label
+                                            class="text-xs font-mono text-white/50 uppercase tracking-wider"
+                                            >Semester</label
+                                        >
+                                        <select
+                                            name="semester_id"
+                                            id="semesterSelect"
+                                            required
+                                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all appearance-none"
+                                        >
+                                            <option value="" disabled selected>
+                                                Loading semesters...
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <label
+                                        class="text-xs font-mono text-white/50 uppercase tracking-wider"
+                                        >Stream</label
+                                    >
+                                    <select
+                                        name="stream_id"
+                                        id="streamSelect"
+                                        required
+                                        disabled
+                                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all appearance-none"
+                                    >
+                                        <option value="" disabled selected>
+                                            Loading streams...
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <label
+                                        class="text-xs font-mono text-white/50 uppercase tracking-wider"
+                                        >Subject</label
+                                    >
+                                    <select
+                                        name="subject_id"
+                                        id="subjectSelect"
+                                        required
+                                        disabled
+                                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-electric focus:ring-1 focus:ring-electric transition-all appearance-none"
+                                    >
+                                        <option value="" disabled selected>
+                                            Select Subject
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div
+                                    class="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-4"
+                                >
+                                    <div>
+                                        <p
+                                            class="text-sm font-semibold text-white"
+                                        >
+                                            Download as PDF
+                                        </p>
+                                        <p class="text-xs text-white/50 mt-1">
+                                            Toggle to receive the generated
+                                            frontpage in PDF format.
+                                        </p>
+                                    </div>
+                                    <label
+                                        class="relative inline-flex cursor-pointer items-center"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            name="as_pdf"
+                                            class="sr-only peer"
+                                            checked
+                                        />
+                                        <div
+                                            class="w-12 h-6 bg-white/20 rounded-full peer peer-focus:ring-2 peer-focus:ring-electric peer-checked:bg-electric after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:after:translate-x-6"
+                                        ></div>
+                                    </label>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    id="submitButton"
+                                    class="group w-full bg-white text-black font-bold py-4 rounded-xl mt-4 hover:bg-electric hover:text-white transition-all duration-300 relative overflow-hidden"
+                                >
+                                    <span
+                                        class="relative z-10 flex items-center justify-center gap-2"
+                                    >
+                                        GENERATE DOCUMENT
+                                        <svg
+                                            class="w-4 h-4 group-hover:translate-x-1 transition-transform"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M17 8l4 4m0 0l-4 4m4-4H3"
+                                            ></path>
+                                        </svg>
+                                    </span>
+                                </button>
+
+                                <a
+                                    href="/static/index_page.pdf"
+                                    class="w-full inline-flex items-center justify-center gap-2 bg-transparent border border-white/20 text-white font-semibold py-3 rounded-xl hover:border-electric hover:text-electric transition-colors"
+                                >
+                                    INDEX PAGE
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke-width="1.5"
+                                        stroke="currentColor"
+                                        class="size-6"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941"
+                                        />
+                                    </svg>
+                                </a>
+                            </form>
+
+                            <div
+                                id="statusBox"
+                                class="hidden mt-6 rounded-2xl border px-4 py-3 text-sm"
+                            ></div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <footer
+                class="border-t border-white/5 bg-black/20 backdrop-blur-lg mt-auto"
+            >
+                <div class="max-w-7xl mx-auto px-6 py-12">
+                    <div
+                        class="flex flex-col md:flex-row justify-between items-end gap-8"
+                    >
+                        <div>
+                            <h3
+                                class="text-4xl font-bold tracking-tighter mb-2"
+                            >
+                                <a
+                                    href="https://github.com/spreadsheets600/frontpage-generator"
+                                    class="hover:text-electric transition-colors"
+                                    >GITHUB REPO</a
+                                >
+                            </h3>
+                            <p class="font-mono text-white/40 text-sm">
+                                Static frontend prepared for Cloudflare Pages
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-mono text-xs text-white/20">
+                                BY
+                                <a
+                                    href="https://github.com/spreadsheets600"
+                                    class="hover:text-cyber transition-colors"
+                                    >SPREADSHEETS600</a
+                                >
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+
+        <script>
+            const DEPLOYED_API_BASE =
+                "https://frontpage-api.spreadsheets600.workers.dev";
+            const TEMPLATE_URL = new URL(
+                "/static/template.png",
+                window.location.origin,
+            ).toString();
+            const FONT_URL = new URL(
+                "/static/Sans.ttf",
+                window.location.origin,
+            ).toString();
+            const TEMPLATE_WIDTH = 1414;
+            const TEMPLATE_HEIGHT = 2000;
+            const FIELD_START_X = 530;
+            const FIELD_START_Y = 1080;
+            const FIELD_LINE_GAP = 87;
+            const FIELD_MAX_WIDTH = 760;
+            const PAPER_NAME_MAX_WIDTH = 760;
+            const FIELD_FONT_SIZE = 45;
+            const FIELD_MIN_FONT_SIZE = 26;
+            const PAPER_NAME_LINE_HEIGHT = 52;
+            const FONT_FAMILY = "FrontpageSans";
+            const renderAssetsPromise = initializeRenderAssets();
+
+            function normalizeApiBase(value) {
+                return String(value || "")
+                    .trim()
+                    .replace(/\/+$/, "");
+            }
+
+            function isLocalHost(host) {
+                return (
+                    host === "127.0.0.1" ||
+                    host === "localhost" ||
+                    host === "0.0.0.0"
+                );
+            }
+
+            function resolveLocalApiBase() {
+                const sameOrigin = normalizeApiBase(window.location.origin);
+                const isStaticHtmlPath =
+                    window.location.pathname.endsWith(".html");
+
+                if (sameOrigin && sameOrigin !== "null" && !isStaticHtmlPath) {
+                    return sameOrigin;
+                }
+
+                return "http://127.0.0.1:8787";
+            }
+
+            function resolveApiBase() {
+                const params = new URLSearchParams(window.location.search);
+                const override = normalizeApiBase(params.get("apiBase"));
+                if (override) {
+                    window.localStorage.setItem("frontpage.apiBase", override);
+                    return override;
+                }
+
+                const stored = normalizeApiBase(
+                    window.localStorage.getItem("frontpage.apiBase"),
+                );
+                if (stored) {
+                    return stored;
+                }
+
+                const host = window.location.hostname;
+                if (isLocalHost(host)) {
+                    return resolveLocalApiBase();
+                }
+
+                return DEPLOYED_API_BASE;
+            }
+
+            const API_BASE = normalizeApiBase(resolveApiBase());
+            let activeApiBase = API_BASE;
+            const semesterSelect = document.getElementById("semesterSelect");
+            const streamSelect = document.getElementById("streamSelect");
+            const subjectSelect = document.getElementById("subjectSelect");
+            const statusBox = document.getElementById("statusBox");
+            const submitButton = document.getElementById("submitButton");
+            const streams = [];
+            const streamMap = {};
+            const subjectMap = {};
+            const semesterMap = {};
+            const allSubjects = [];
+
+            function setStatus(message, tone) {
+                const toneClasses = {
+                    success: "border-acid/40 bg-acid/10 text-acid",
+                    error: "border-red-400/40 bg-red-400/10 text-red-200",
+                    info: "border-electric/40 bg-electric/10 text-electric",
+                };
+                statusBox.className =
+                    "mt-6 rounded-2xl border px-4 py-3 text-sm " +
+                    (toneClasses[tone] || toneClasses.info);
+                statusBox.textContent = message;
+                statusBox.classList.remove("hidden");
+            }
+
+            function resetSelect(selectEl, placeholder) {
+                selectEl.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
+                selectEl.disabled = true;
+            }
+
+            async function initializeRenderAssets() {
+                const templateImage = await loadImage(TEMPLATE_URL);
+                await loadCanvasFont();
+                return { templateImage };
+            }
+
+            function loadImage(src) {
+                return new Promise((resolve, reject) => {
+                    const image = new Image();
+                    image.onload = () => resolve(image);
+                    image.onerror = () =>
+                        reject(
+                            new Error(
+                                `Could not load template image from ${src}`,
+                            ),
+                        );
+                    image.src = src;
+                });
+            }
+
+            async function loadCanvasFont() {
+                if (document.fonts.check(`16px "${FONT_FAMILY}"`)) {
+                    return;
+                }
+                const font = new FontFace(FONT_FAMILY, `url("${FONT_URL}")`);
+                await font.load();
+                document.fonts.add(font);
+                await document.fonts.load(`16px "${FONT_FAMILY}"`);
+            }
+
+            function buildRenderRows(payload) {
+                return [
+                    {
+                        text: payload.name,
+                        y: FIELD_START_Y,
+                        maxWidth: FIELD_MAX_WIDTH,
+                    },
+                    {
+                        text: payload.roll,
+                        y: FIELD_START_Y + FIELD_LINE_GAP,
+                        maxWidth: FIELD_MAX_WIDTH,
+                    },
+                    {
+                        text: payload.reg,
+                        y: FIELD_START_Y + FIELD_LINE_GAP * 2,
+                        maxWidth: FIELD_MAX_WIDTH,
+                    },
+                    {
+                        text: payload.stream_label,
+                        y: FIELD_START_Y + FIELD_LINE_GAP * 3,
+                        maxWidth: FIELD_MAX_WIDTH,
+                    },
+                    {
+                        text: payload.semester_label,
+                        y: FIELD_START_Y + FIELD_LINE_GAP * 4,
+                        maxWidth: FIELD_MAX_WIDTH,
+                    },
+                    {
+                        text: payload.subject_code,
+                        y: FIELD_START_Y + FIELD_LINE_GAP * 5,
+                        maxWidth: FIELD_MAX_WIDTH,
+                    },
+                    {
+                        text: payload.subject_name,
+                        y: FIELD_START_Y + FIELD_LINE_GAP * 6,
+                        maxWidth: PAPER_NAME_MAX_WIDTH,
+                        allowWrap: true,
+                    },
+                ];
+            }
+
+            function createFrontpageCanvas(templateImage, payload) {
+                const canvas = document.createElement("canvas");
+                canvas.width = TEMPLATE_WIDTH;
+                canvas.height = TEMPLATE_HEIGHT;
+                const context = canvas.getContext("2d");
+
+                context.drawImage(
+                    templateImage,
+                    0,
+                    0,
+                    TEMPLATE_WIDTH,
+                    TEMPLATE_HEIGHT,
+                );
+                context.fillStyle = "#000000";
+                context.textBaseline = "alphabetic";
+
+                buildRenderRows(payload).forEach((row) => {
+                    if (row.allowWrap) {
+                        drawWrappedField(
+                            context,
+                            row.text,
+                            FIELD_START_X,
+                            row.y,
+                            row.maxWidth,
+                        );
+                        return;
+                    }
+                    drawSingleLineField(
+                        context,
+                        row.text,
+                        FIELD_START_X,
+                        row.y,
+                        row.maxWidth,
+                    );
+                });
+
+                return canvas;
+            }
+
+            function applyFont(context, size) {
+                context.font = `${size}px "${FONT_FAMILY}", Arial, sans-serif`;
+            }
+
+            function countWords(text) {
+                return String(text || "")
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean).length;
+            }
+
+            function getPaperNameStartSize(text) {
+                const wordCount = countWords(text);
+                if (wordCount > 6) {
+                    return FIELD_FONT_SIZE - 6;
+                }
+                if (wordCount > 3) {
+                    return FIELD_FONT_SIZE - 3;
+                }
+                return FIELD_FONT_SIZE;
+            }
+
+            function fitFontSize(
+                context,
+                text,
+                maxWidth,
+                startSize = FIELD_FONT_SIZE,
+            ) {
+                let size = startSize;
+                while (size > FIELD_MIN_FONT_SIZE) {
+                    applyFont(context, size);
+                    if (context.measureText(text).width <= maxWidth) {
+                        return size;
+                    }
+                    size -= 1;
+                }
+                return FIELD_MIN_FONT_SIZE;
+            }
+
+            function drawSingleLineField(context, text, x, y, maxWidth) {
+                const value = String(text || "").trim();
+                const size = fitFontSize(context, value, maxWidth);
+                applyFont(context, size);
+                context.fillText(value, x, y, maxWidth);
+            }
+
+            function wrapText(context, text, maxWidth) {
+                const words = String(text || "")
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean);
+                if (!words.length) {
+                    return [""];
+                }
+
+                const lines = [];
+                let currentLine = words.shift();
+
+                words.forEach((word) => {
+                    const nextLine = `${currentLine} ${word}`;
+                    if (context.measureText(nextLine).width <= maxWidth) {
+                        currentLine = nextLine;
+                        return;
+                    }
+                    lines.push(currentLine);
+                    currentLine = word;
+                });
+
+                lines.push(currentLine);
+                return lines;
+            }
+
+            function drawWrappedField(context, text, x, y, maxWidth) {
+                let size = getPaperNameStartSize(text);
+                let lines = [];
+
+                while (size > FIELD_MIN_FONT_SIZE) {
+                    applyFont(context, size);
+                    lines = wrapText(context, text, maxWidth);
+                    if (lines.length <= 2) {
+                        break;
+                    }
+                    size -= 1;
+                }
+
+                applyFont(context, size);
+                lines.slice(0, 2).forEach((line, index) => {
+                    context.fillText(
+                        line,
+                        x,
+                        y + index * PAPER_NAME_LINE_HEIGHT,
+                        maxWidth,
+                    );
+                });
+            }
+
+            async function generatePdfBlob(canvas) {
+                const { jsPDF } = window.jspdf || {};
+                if (!jsPDF) {
+                    throw new Error("jsPDF failed to load.");
+                }
+
+                const pdf = new jsPDF({
+                    orientation: "portrait",
+                    unit: "mm",
+                    format: "a4",
+                });
+
+                const imageData = canvas.toDataURL("image/png");
+                pdf.addImage(imageData, "PNG", 0, 0, 210, 297);
+                return pdf.output("blob");
+            }
+
+            async function generateDocumentBlob(payload) {
+                const { templateImage } = await renderAssetsPromise;
+                const canvas = createFrontpageCanvas(templateImage, payload);
+
+                if (payload.as_pdf) {
+                    const blob = await generatePdfBlob(canvas);
+                    return { blob, contentType: "application/pdf" };
+                }
+
+                const blob = await new Promise((resolve, reject) => {
+                    canvas.toBlob((result) => {
+                        if (result) {
+                            resolve(result);
+                            return;
+                        }
+                        reject(new Error("Could not render PNG output."));
+                    }, "image/png");
+                });
+                return { blob, contentType: "image/png" };
+            }
+
+            async function logGeneration(payload) {
+                const response = await fetch(
+                    buildApiUrl(activeApiBase, "/api/log-generation"),
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(payload),
+                    },
+                );
+
+                if (!response.ok) {
+                    const message = await response.text();
+                    throw new Error(message || "Could not log generation.");
+                }
+            }
+
+            function downloadBlob(blob, payload) {
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = downloadUrl;
+                const extension = payload.as_pdf ? "pdf" : "png";
+                link.download =
+                    `${payload.name}-${payload.subject_name}-FrontPageCover.${extension}`.replace(
+                        /\s+/g,
+                        "-",
+                    );
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.setTimeout(
+                    () => window.URL.revokeObjectURL(downloadUrl),
+                    1000,
+                );
+            }
+
+            function populateSelect(selectEl, placeholder, items, formatter) {
+                resetSelect(selectEl, placeholder);
+                if (!items || !items.length) {
+                    return;
+                }
+                items.forEach((item) => {
+                    const option = document.createElement("option");
+                    option.value = item.id;
+                    option.textContent = formatter(item);
+                    option.className = "bg-obsidian";
+                    selectEl.appendChild(option);
+                });
+                selectEl.disabled = false;
+            }
+
+            function buildApiUrl(base, path) {
+                const normalized = normalizeApiBase(base);
+                if (!normalized) {
+                    throw new Error("No Worker API base is configured.");
+                }
+                return `${normalized}${path}`;
+            }
+
+            async function fetchJsonForBase(path, base) {
+                const response = await fetch(buildApiUrl(base, path));
+                if (!response.ok) {
+                    const message = await response.text();
+                    throw new Error(message || `Request failed for ${path}`);
+                }
+                return response.json();
+            }
+
+            async function fetchJson(path) {
+                return fetchJsonForBase(path, activeApiBase);
+            }
+
+            async function loadCatalog() {
+                const candidateBases = [];
+                const originBase = normalizeApiBase(window.location.origin);
+                if (originBase && originBase !== "null") {
+                    candidateBases.push(originBase);
+                }
+                if (API_BASE && !candidateBases.includes(API_BASE)) {
+                    candidateBases.push(API_BASE);
+                }
+
+                if (!candidateBases.length) {
+                    throw new Error(
+                        "No Worker API base is configured. Reopen the page with ?apiBase=<your-worker> or update DEPLOYED_API_BASE.",
+                    );
+                }
+
+                let data = null;
+                for (const base of candidateBases) {
+                    try {
+                        data = await fetchJsonForBase("/api/catalog", base);
+                        activeApiBase = base;
+                        break;
+                    } catch (error) {
+                        console.warn("Catalog fetch failed for", base, error);
+                    }
+                }
+
+                if (!data) {
+                    throw new Error(
+                        "Could not load the catalog from the Worker API. Check the API base and try again.",
+                    );
+                }
+
+                const semesters = data.semesters || [];
+                const catalogStreams = data.streams || [];
+                const catalogSubjects = data.subjects || [];
+
+                semesters.forEach((semester) => {
+                    semesterMap[String(semester.id)] = semester;
+                });
+
+                catalogSubjects.forEach((subject) => {
+                    const normalized = {
+                        id: String(subject.id),
+                        name: subject.name,
+                        code: subject.code,
+                    };
+                    if (!subjectMap[normalized.id]) {
+                        subjectMap[normalized.id] = normalized;
+                        allSubjects.push(normalized);
+                    }
+                });
+
+                catalogStreams.forEach((stream) => {
+                    const normalized = {
+                        id: String(stream.id),
+                        name: stream.name,
+                    };
+                    streams.push(normalized);
+                    streamMap[normalized.id] = normalized;
+                });
+
+                populateSelect(
+                    semesterSelect,
+                    "Select Semester",
+                    semesters,
+                    (item) => item.label,
+                );
+                populateSelect(
+                    streamSelect,
+                    "Select Stream",
+                    streams,
+                    (item) => item.name,
+                );
+                populateSelect(
+                    subjectSelect,
+                    "Select Subject",
+                    allSubjects,
+                    (item) => `${item.name} (${item.code})`,
+                );
+            }
+
+            async function loadStats() {
+                try {
+                    const data = await fetchJson("/api/stats");
+                    const count = Number(data.generated_count || 0);
+                    document.getElementById("docCounter").textContent = count;
+                } catch (error) {
+                    console.error("Failed to fetch stats", error);
+                }
+            }
+
+            semesterSelect.addEventListener("change", (event) => {
+                void event;
+                populateSelect(
+                    subjectSelect,
+                    "Select Subject",
+                    allSubjects,
+                    (item) => `${item.name} (${item.code})`,
+                );
+            });
+
+            document
+                .getElementById("frontpageForm")
+                .addEventListener("submit", async (event) => {
+                    event.preventDefault();
+                    submitButton.disabled = true;
+                    submitButton.classList.add(
+                        "opacity-60",
+                        "cursor-not-allowed",
+                    );
+                    setStatus(
+                        "Generating document locally from the template...",
+                        "info",
+                    );
+
+                    try {
+                        const formData = new FormData(event.currentTarget);
+                        const semester =
+                            semesterMap[String(formData.get("semester_id"))];
+                        const stream =
+                            streamMap[String(formData.get("stream_id"))];
+                        const subject =
+                            subjectMap[String(formData.get("subject_id"))];
+
+                        if (!semester || !stream || !subject) {
+                            throw new Error(
+                                "Please select a valid semester, stream, and subject.",
+                            );
+                        }
+
+                        const payload = {
+                            name: String(formData.get("name") || "").trim(),
+                            roll: String(formData.get("roll") || "").trim(),
+                            reg: String(formData.get("reg") || "").trim(),
+                            semester_id: Number(formData.get("semester_id")),
+                            stream_id: Number(formData.get("stream_id")),
+                            subject_id: Number(formData.get("subject_id")),
+                            as_pdf: formData.get("as_pdf") === "on",
+                            semester_label: semester.label,
+                            stream_label: stream.name,
+                            subject_name: subject.name,
+                            subject_code: subject.code,
+                        };
+
+                        const { blob } = await generateDocumentBlob(payload);
+                        downloadBlob(blob, payload);
+                        setStatus(
+                            `${payload.as_pdf ? "PDF" : "PNG"} generated and downloaded.`,
+                            "success",
+                        );
+
+                        try {
+                            await logGeneration(payload);
+                            await loadStats();
+                        } catch (logError) {
+                            console.error(
+                                "Generation logging failed",
+                                logError,
+                            );
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        setStatus(
+                            error.message ||
+                                "Something went wrong while generating the document.",
+                            "error",
+                        );
+                    } finally {
+                        submitButton.disabled = false;
+                        submitButton.classList.remove(
+                            "opacity-60",
+                            "cursor-not-allowed",
+                        );
+                    }
+                });
+
+            document.addEventListener("DOMContentLoaded", async () => {
+                const observer = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach((entry) => {
+                            if (entry.isIntersecting) {
+                                entry.target.classList.add(
+                                    "opacity-100",
+                                    "translate-y-0",
+                                );
+                                entry.target.classList.remove(
+                                    "opacity-0",
+                                    "translate-y-10",
+                                );
+                            }
+                        });
+                    },
+                    { threshold: 0.1 },
+                );
+
+                document.querySelectorAll(".reveal").forEach((el) => {
+                    el.classList.add(
+                        "transition-all",
+                        "duration-1000",
+                        "opacity-0",
+                        "translate-y-10",
+                    );
+                    observer.observe(el);
+                });
+
+                try {
+                    await loadCatalog();
+                    await loadStats();
+                    setInterval(loadStats, 30000);
+                } catch (error) {
+                    console.error(error);
+                    resetSelect(semesterSelect, "Failed to load catalog");
+                    resetSelect(streamSelect, "Failed to load streams");
+                    setStatus(
+                        "Could not reach the Worker API. Check the API base URL and CORS settings.",
+                        "error",
+                    );
+                }
+            });
+        </script>
+    </body>
 </html>

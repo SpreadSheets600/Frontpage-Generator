@@ -55,9 +55,31 @@ def sanitize_text(value):
     return html.escape(str(value or "").strip())
 
 
+def plain_text(value):
+    return str(value or "").strip()
+
+
+def word_count(value):
+    return len(str(value or "").strip().split())
+
+
 def require_fields(payload, names):
     missing = [name for name in names if not str(payload.get(name, "")).strip()]
     return missing
+
+
+def is_gmail_address(email):
+    if not email:
+        return False
+    email_lower = str(email).strip().lower()
+    return email_lower.endswith("@gmail.com") and email_lower.count("@") == 1
+
+
+def validate_gmail_field(payload, field_name):
+    value = str(payload.get(field_name, "")).strip()
+    if value and not is_gmail_address(value):
+        return f"{field_name} must be a valid Gmail address"
+    return None
 
 
 def env_value(env, name, default=""):
@@ -166,6 +188,59 @@ def parse_int(value, default=None):
         return default
 
 
+def clamp_text(value, limit):
+    text = plain_text(value)
+    if len(text) <= limit:
+        return text
+    return text[: max(limit - 1, 0)].rstrip() + "…"
+
+
+def normalize_feedback_text(value, limit):
+    lines = [line.strip() for line in plain_text(value).splitlines()]
+    text = "\n".join(line for line in lines if line)
+    return clamp_text(text.replace("@", "@\u200b"), limit)
+
+
+async def send_feedback_to_discord(env, payload):
+    webhook_url = plain_text(env_value(env, "DISCORD_FEEDBACK_WEBHOOK_URL", ""))
+    if not webhook_url:
+        raise ValueError("Feedback webhook is not configured.")
+
+    name = normalize_feedback_text(payload.get("name"), 120) or "Anonymous"
+    contact = normalize_feedback_text(payload.get("contact"), 180) or "Not provided"
+    topic = normalize_feedback_text(payload.get("topic"), 120) or "General"
+    message = normalize_feedback_text(payload.get("message"), 4000)
+    source_page = normalize_feedback_text(payload.get("page"), 200) or "/feedback/"
+
+    discord_payload = {
+        "allowed_mentions": {"parse": []},
+        "embeds": [
+            {
+                "title": "New Frontpage Feedback",
+                "color": 3903746,
+                "description": message,
+                "fields": [
+                    {"name": "Name", "value": name, "inline": True},
+                    {"name": "Contact", "value": contact, "inline": True},
+                    {"name": "Topic", "value": topic, "inline": True},
+                    {"name": "Source", "value": source_page, "inline": False},
+                ],
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        ],
+    }
+
+    response = await fetch(
+        webhook_url,
+        method="POST",
+        headers={"Content-Type": "application/json"},
+        body=json.dumps(discord_payload),
+    )
+    if not response.ok:
+        details = await response.text()
+        raise RuntimeError(details or "Discord webhook request failed.")
+
+
 async def log_generation(env, payload):
     created_at = datetime.now(timezone.utc).isoformat()
     await (
@@ -230,11 +305,14 @@ def render_frontpage_html(payload, env):
         ("Paper Code", rows[5]),
         ("Paper Name", rows[6]),
     ]
+    paper_name_compact_class = (
+        " value-cell--compact" if word_count(payload["subject_name"]) > 3 else ""
+    )
     row_markup = "\n".join(
         f"""
         <div class="info-row">
           <div class="label-cell">{label}</div>
-          <div class="value-cell">{value}</div>
+          <div class="value-cell{" value-cell--paper-name" + paper_name_compact_class if label == "Paper Name" else ""}">{value}</div>
         </div>
         """
         for label, value in table_rows
@@ -378,6 +456,14 @@ def render_frontpage_html(payload, env):
       overflow-wrap: anywhere;
     }}
 
+    .value-cell--paper-name {{
+      line-height: 1.2;
+    }}
+
+    .value-cell--paper-name.value-cell--compact {{
+      font-size: 8pt;
+    }}
+
     .footer {{
       position: absolute;
       left: 0;
@@ -458,7 +544,9 @@ class Default(WorkerEntrypoint):
 
             return with_cors(
                 self.env,
-                json_response({"semesters": semesters, "streams": streams, "subjects": subjects}),
+                json_response(
+                    {"semesters": semesters, "streams": streams, "subjects": subjects}
+                ),
             )
 
         if path == "/api/generate-pdf" and method == "POST":
@@ -506,7 +594,9 @@ class Default(WorkerEntrypoint):
                     return with_cors(
                         self.env,
                         json_response(
-                            {"error": "Browser Rendering credentials are not configured."},
+                            {
+                                "error": "Browser Rendering credentials are not configured."
+                            },
                             status=500,
                         ),
                     )
@@ -525,7 +615,12 @@ class Default(WorkerEntrypoint):
                 request_body = {"html": html_document}
                 if wants_pdf:
                     request_body["pdfOptions"] = {
-                        "margin": {"top": "0", "right": "0", "bottom": "0", "left": "0"},
+                        "margin": {
+                            "top": "0",
+                            "right": "0",
+                            "bottom": "0",
+                            "left": "0",
+                        },
                         "printBackground": True,
                     }
                 else:
@@ -638,6 +733,57 @@ class Default(WorkerEntrypoint):
                     ),
                 )
 
+        if path == "/api/feedback" and method == "POST":
+            payload = await request.json()
+            required_fields = ["name", "topic", "message"]
+            missing = require_fields(payload, required_fields)
+            if missing:
+                return with_cors(
+                    self.env,
+                    json_response(
+                        {
+                            "error": "Missing required fields",
+                            "fields": missing,
+                        },
+                        status=400,
+                    ),
+                )
+
+            contact = str(payload.get("contact", "")).strip()
+            if contact and not is_gmail_address(contact):
+                return with_cors(
+                    self.env,
+                    json_response(
+                        {
+                            "error": "Contact must be a valid Gmail address",
+                        },
+                        status=400,
+                    ),
+                )
+
+            try:
+                await send_feedback_to_discord(self.env, payload)
+                return with_cors(
+                    self.env,
+                    json_response({"ok": True, "message": "Feedback sent"}, status=201),
+                )
+            except ValueError as error:
+                return with_cors(
+                    self.env,
+                    json_response({"error": str(error)}, status=500),
+                )
+            except Exception as error:
+                return with_cors(
+                    self.env,
+                    json_response(
+                        {
+                            "error": "Could not send feedback.",
+                            "details": str(error),
+                        },
+                        status=502,
+                    ),
+                )
+
         if path == "/admin/subjects":
             allowed, reason = is_admin_authorized(self.env, request)
             if not allowed:
@@ -654,7 +800,9 @@ class Default(WorkerEntrypoint):
                     "SELECT id, name, code FROM subjects ORDER BY name"
                 ).all()
 
-                semesters = [row_to_dict(row) for row in (semesters_result.results or [])]
+                semesters = [
+                    row_to_dict(row) for row in (semesters_result.results or [])
+                ]
                 streams = [row_to_dict(row) for row in (streams_result.results or [])]
                 subjects = [row_to_dict(row) for row in (subjects_result.results or [])]
 
@@ -680,7 +828,9 @@ class Default(WorkerEntrypoint):
                 if not subject_name:
                     return with_cors(
                         self.env,
-                        json_response({"error": "Subject name is required"}, status=400),
+                        json_response(
+                            {"error": "Subject name is required"}, status=400
+                        ),
                     )
                 if not semester_id:
                     return with_cors(
@@ -688,9 +838,13 @@ class Default(WorkerEntrypoint):
                         json_response({"error": "semester_id is required"}, status=400),
                     )
 
-                subject_row = await self.env.DB.prepare(
-                    "SELECT id FROM subjects WHERE lower(name) = lower(?)"
-                ).bind(subject_name).first()
+                subject_row = (
+                    await self.env.DB.prepare(
+                        "SELECT id FROM subjects WHERE lower(name) = lower(?)"
+                    )
+                    .bind(subject_name)
+                    .first()
+                )
                 subject = row_to_dict(subject_row)
                 subject_id = subject.get("id")
 
@@ -704,18 +858,28 @@ class Default(WorkerEntrypoint):
                     )
                 else:
                     await (
-                        self.env.DB.prepare("INSERT INTO subjects (name, code) VALUES (?, ?)")
+                        self.env.DB.prepare(
+                            "INSERT INTO subjects (name, code) VALUES (?, ?)"
+                        )
                         .bind(subject_name, code)
                         .run()
                     )
-                    created_row = await self.env.DB.prepare(
-                        "SELECT id FROM subjects WHERE lower(name) = lower(?)"
-                    ).bind(subject_name).first()
+                    created_row = (
+                        await self.env.DB.prepare(
+                            "SELECT id FROM subjects WHERE lower(name) = lower(?)"
+                        )
+                        .bind(subject_name)
+                        .first()
+                    )
                     subject_id = row_to_dict(created_row).get("id")
 
-                offering_row = await self.env.DB.prepare(
-                    "SELECT id FROM subject_offerings WHERE subject_id = ? AND semester_id = ?"
-                ).bind(subject_id, semester_id).first()
+                offering_row = (
+                    await self.env.DB.prepare(
+                        "SELECT id FROM subject_offerings WHERE subject_id = ? AND semester_id = ?"
+                    )
+                    .bind(subject_id, semester_id)
+                    .first()
+                )
                 offering = row_to_dict(offering_row)
 
                 if offering.get("id"):
@@ -728,9 +892,13 @@ class Default(WorkerEntrypoint):
                         .bind(subject_id, semester_id)
                         .run()
                     )
-                    offering_created = await self.env.DB.prepare(
-                        "SELECT id FROM subject_offerings WHERE subject_id = ? AND semester_id = ?"
-                    ).bind(subject_id, semester_id).first()
+                    offering_created = (
+                        await self.env.DB.prepare(
+                            "SELECT id FROM subject_offerings WHERE subject_id = ? AND semester_id = ?"
+                        )
+                        .bind(subject_id, semester_id)
+                        .first()
+                    )
                     offering_id = row_to_dict(offering_created).get("id")
 
                 return with_cors(
@@ -755,7 +923,9 @@ class Default(WorkerEntrypoint):
                 if not subject_name:
                     return with_cors(
                         self.env,
-                        json_response({"error": "Subject name is required"}, status=400),
+                        json_response(
+                            {"error": "Subject name is required"}, status=400
+                        ),
                     )
                 if not semester_id:
                     return with_cors(
@@ -763,23 +933,33 @@ class Default(WorkerEntrypoint):
                         json_response({"error": "semester_id is required"}, status=400),
                     )
 
-                current_row = await self.env.DB.prepare(
-                    """
+                current_row = (
+                    await self.env.DB.prepare(
+                        """
                     SELECT off.id AS offering_id, off.subject_id AS subject_id
                     FROM subject_offerings off
                     WHERE off.id = ?
                     """
-                ).bind(offering_id).first()
+                    )
+                    .bind(offering_id)
+                    .first()
+                )
                 current = row_to_dict(current_row)
                 if not current:
                     return with_cors(
                         self.env,
-                        json_response({"error": "Subject offering not found"}, status=404),
+                        json_response(
+                            {"error": "Subject offering not found"}, status=404
+                        ),
                     )
 
-                duplicate_row = await self.env.DB.prepare(
-                    "SELECT id FROM subjects WHERE lower(name) = lower(?) AND id != ?"
-                ).bind(subject_name, current["subject_id"]).first()
+                duplicate_row = (
+                    await self.env.DB.prepare(
+                        "SELECT id FROM subjects WHERE lower(name) = lower(?) AND id != ?"
+                    )
+                    .bind(subject_name, current["subject_id"])
+                    .first()
+                )
                 if row_to_dict(duplicate_row):
                     return with_cors(
                         self.env,
@@ -829,14 +1009,20 @@ class Default(WorkerEntrypoint):
                         json_response({"error": "offering_id is required"}, status=400),
                     )
 
-                offering_row = await self.env.DB.prepare(
-                    "SELECT id, subject_id FROM subject_offerings WHERE id = ?"
-                ).bind(offering_id).first()
+                offering_row = (
+                    await self.env.DB.prepare(
+                        "SELECT id, subject_id FROM subject_offerings WHERE id = ?"
+                    )
+                    .bind(offering_id)
+                    .first()
+                )
                 offering = row_to_dict(offering_row)
                 if not offering:
                     return with_cors(
                         self.env,
-                        json_response({"error": "Subject offering not found"}, status=404),
+                        json_response(
+                            {"error": "Subject offering not found"}, status=404
+                        ),
                     )
 
                 await (
@@ -844,10 +1030,16 @@ class Default(WorkerEntrypoint):
                     .bind(offering_id)
                     .run()
                 )
-                left_row = await self.env.DB.prepare(
-                    "SELECT COUNT(*) AS count FROM subject_offerings WHERE subject_id = ?"
-                ).bind(offering["subject_id"]).first()
-                left_count = parse_int(row_to_dict(left_row).get("count"), default=0) or 0
+                left_row = (
+                    await self.env.DB.prepare(
+                        "SELECT COUNT(*) AS count FROM subject_offerings WHERE subject_id = ?"
+                    )
+                    .bind(offering["subject_id"])
+                    .first()
+                )
+                left_count = (
+                    parse_int(row_to_dict(left_row).get("count"), default=0) or 0
+                )
                 if left_count == 0:
                     await (
                         self.env.DB.prepare("DELETE FROM subjects WHERE id = ?")
@@ -907,9 +1099,13 @@ class Default(WorkerEntrypoint):
                         ),
                     )
 
-                created = await self.env.DB.prepare(
-                    "SELECT id FROM streams WHERE lower(name) = lower(?)"
-                ).bind(name).first()
+                created = (
+                    await self.env.DB.prepare(
+                        "SELECT id FROM streams WHERE lower(name) = lower(?)"
+                    )
+                    .bind(name)
+                    .first()
+                )
                 return with_cors(
                     self.env,
                     json_response(
@@ -952,8 +1148,9 @@ class Default(WorkerEntrypoint):
             limit = parse_int((params.get("limit") or [50])[0], default=50) or 50
             limit = max(1, min(200, limit))
 
-            logs_result = await self.env.DB.prepare(
-                """
+            logs_result = (
+                await self.env.DB.prepare(
+                    """
                 SELECT
                   created_at AS timestamp,
                   student_name AS name,
@@ -967,7 +1164,10 @@ class Default(WorkerEntrypoint):
                 ORDER BY created_at DESC
                 LIMIT ?
                 """
-            ).bind(limit).all()
+                )
+                .bind(limit)
+                .all()
+            )
             logs = [row_to_dict(row) for row in (logs_result.results or [])]
             return with_cors(self.env, json_response({"logs": logs}))
 
