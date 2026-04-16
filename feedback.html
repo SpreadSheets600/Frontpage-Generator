@@ -447,6 +447,10 @@
                             "Feedback sent successfully! Thank you for your input.",
                             "success",
                         );
+
+                        const form = document.getElementById("feedbackForm");
+                        if (form) form.reset();
+
                         charCount.textContent = "0";
                     } catch (error) {
                         console.error(error);
